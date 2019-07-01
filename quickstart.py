@@ -7,7 +7,7 @@ token = token_file.readlines()
 token_file.close()
 token[0] = token[0].rstrip('\n')
 
-link_re = re.compile("\[[^\].]*\]\([^\).]*\)")
+link_re = re.compile('\[.*?\]\(.*?\)')
 print(token)
 
 if len(token) > 0:
