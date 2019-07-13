@@ -1,10 +1,12 @@
 import fetch_plays as fp
 import requests
+import pickle
 
 
 def download(links):
     s = requests.session()
-    payload = {"username": "", "password": "", "redirect": "index.php", "sid": "", "login":"Login"}
+    with open('creds/payload', 'rb') as handle:
+        payload = pickle.loads(handle.read())
     r=s.get("https://osu.ppy.sh/forum/ucp.php?mode=login")
     r=s.post("https://osu.ppy.sh/forum/ucp.php?mode=login", data=payload)
     r=s.get("https://osu.ppy.sh/forum/index.php?success=1563054777")
