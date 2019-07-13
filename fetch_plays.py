@@ -2,10 +2,7 @@ import praw
 import io
 import re
 
-token_file = io.open("creds/reddit_token.txt", "r")
-token = token_file.readlines()
-token_file.close()
-token[0] = token[0].rstrip('\n')
+
 
 link_re = re.compile('\[.*?\]\(.*?\)')
 url_re = re.compile('\(.*?\)')
@@ -39,9 +36,11 @@ def get_subreddit_links(reddit:praw.Reddit, subreddit:str, sort_type:str, num_po
 
 def parse_osu_links(d):
     out_str = "title;beatmap;download;mapper;player;top_on_map;top_play_of_top_on_map\n"
+    new_d = {}
     for key,value in d.items():
         if value != []:
             out_str = "{0}\n\"{1}\";".format(out_str,key)
+            new_val = []
             # beatmap, download, mapper, player, top_on_map, top_play_of_top_on_map = ""
             for link in value:
                 # if "osu.ppy.sh/b/" in link and beatmap == "":
@@ -58,10 +57,13 @@ def parse_osu_links(d):
                 #     top_play_of_top_on_map = url_re.search(link).group(0)
                 match = re.search("osu\.ppy\.sh/./\d*", link)
                 if match is not None:
-                    out_str = "{0}{1};".format(out_str,re.sub("osu.ppy.sh/", "", match.group(0)))
+                    # out_str = "{0}{1};".format(out_str,re.sub("osu.ppy.sh/", "", match.group(0)))
+                    new_val.append(re.sub("osu.ppy.sh/./", "", match.group(0)))
+            new_d[key] = new_val
             # out_str = out_str + "\n"
         # out_str.append("{0},{1},{2},{3},{4},{5}\n".format(beatmap, download, mapper, player, top_on_map, top_play_of_top_on_map))
-    return out_str # am rarted
+    return new_d
+    # return out_str # am rarted
 
     # out ={}
     # for key,value in d.items():
@@ -73,15 +75,22 @@ def parse_osu_links(d):
     #     out[key] = value
     # return out
 
+def initialize():
+    token_file = io.open("creds/reddit_token.txt", "r")
+    token = token_file.readlines()
+    token_file.close()
+    token[0] = token[0].rstrip('\n')
+    if len(token) > 0:
+        reddit = praw.Reddit(client_id=token[0],
+                        client_secret=token[1],
+                        user_agent='my user agent')
+        # print(reddit.user.me())
+        return reddit
+    else:
+        print("unable to get token")
 
-if len(token) > 0:
-    reddit = praw.Reddit(client_id=token[0],
-                     client_secret=token[1],
-                     user_agent='my user agent')
-    # print(reddit.user.me())
-    links = get_subreddit_links(reddit, 'osugame', 'top', 5, 'osu-bot')
-    print(links)
-    print('\n\n\n\n\n\n\n\n\n')
+if __name__ == "__main__":
+    links = get_subreddit_links(initialize(), 'osugame', 'top', 5, 'osu-bot')
+    # print(links)
+    # print('\n\n\n\n\n\n\n\n\n')
     print(parse_osu_links(links))
-else:
-    print("unable to get token")
