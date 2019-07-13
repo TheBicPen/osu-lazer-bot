@@ -8,17 +8,23 @@ def download(links):
     with open('creds/payload', 'rb') as handle:
         payload = pickle.loads(handle.read())
     r=s.get("https://osu.ppy.sh/forum/ucp.php?mode=login")
+    with open('responses/get_login', 'wb') as fd:
+        for chunk in r.iter_content(chunk_size=128):
+            fd.write(chunk)
     r=s.post("https://osu.ppy.sh/forum/ucp.php?mode=login", data=payload)
+    with open('responses/post_login', 'wb') as fd:
+        for chunk in r.iter_content(chunk_size=128):
+            fd.write(chunk)
     r=s.get("https://osu.ppy.sh/forum/index.php?success=1563054777")
-    print(r.content)
-    for cookie in s.cookies:
-        print(cookie)
+    with open('responses/get_loggedin', 'wb') as fd:
+        for chunk in r.iter_content(chunk_size=128):
+            fd.write(chunk)
     for link in links:
         r = s.get(link)
-        print(r)
-        # with open('out', 'wb') as fd:
-        #     for chunk in r.iter_content(chunk_size=128):
-        #         fd.write(chunk)
+        # print(r)
+        with open('responses/last_link', 'wb') as fd:
+            for chunk in r.iter_content(chunk_size=128):
+                fd.write(chunk)
 
 def get_links():
     links = fp.get_subreddit_links(fp.initialize(), 'osugame', 'top', 5, 'osu-bot')
