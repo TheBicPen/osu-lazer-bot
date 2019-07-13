@@ -10,6 +10,15 @@ url_re = re.compile('\(.*?\)')
 
 
 def get_subreddit_links(reddit:praw.Reddit, subreddit:str, sort_type:str, num_posts:int, author:str):
+    """
+    Uses the Reddit instance to retrieve the first num_posts from subreddit, sorted by sort_type.
+    Then searches for comments on these posts made by author (should be a bot that posts on all posts),
+    and finally returns a dict where the keys are the post titles, and the values are a list of markdown-formatted
+    links on that post by the given author. Only the first comment by author on each post is considered. 
+    
+    Only the first set of comments is loaded, so the comment by author should be pinned or highly upvoted.
+    See praw api docs for list of valid sort types - https://praw.readthedocs.io/en/latest/code_overview/models/subreddit.html 
+    """
     subreddit = reddit.subreddit(subreddit)
     link_set={}
     if sort_type == 'hot':
@@ -19,7 +28,7 @@ def get_subreddit_links(reddit:praw.Reddit, subreddit:str, sort_type:str, num_po
     for submission in submissions:
         # print("Title: " + submission.title)
         comments = submission.comments.list()
-        link_list=[] #heh
+        link_list={} #heh
         try:
             for comment in comments:
                 if comment.author == author:
@@ -34,12 +43,15 @@ def get_subreddit_links(reddit:praw.Reddit, subreddit:str, sort_type:str, num_po
     return link_set
 
 
-def parse_osu_links(d):
-    out_str = "title;beatmap;download;mapper;player;top_on_map;top_play_of_top_on_map\n"
+def parse_osu_links(d:dict):
+    """
+    Parse a dict of markdown-links sent by osu-bot. Extract the osu.ppy.sh URLs, and 
+    """
+    # out_str = "title;beatmap;download;mapper;player;top_on_map;top_play_of_top_on_map\n"
     new_d = {}
     for key,value in d.items():
         if value != []:
-            out_str = "{0}\n\"{1}\";".format(out_str,key)
+            # out_str = "{0}\n\"{1}\";".format(out_str,key)
             new_val = []
             # beatmap, download, mapper, player, top_on_map, top_play_of_top_on_map = ""
             for link in value:
@@ -77,21 +89,28 @@ def parse_osu_links(d):
     # return out
 
 def initialize():
-    token_file = io.open("creds/reddit_token.txt", "r")
-    token = token_file.readlines()
-    token_file.close()
-    token[0] = token[0].rstrip('\n')
-    if len(token) > 0:
+    """
+    Read token file and return a Reddit instance
+    """
+    try:
+        token_file = io.open("creds/reddit_token.txt", "r")
+        token = token_file.readlines()
+        token_file.close()
+        token[0] = token[0].rstrip('\n')
+    except:
+        print("unable to read Reddit API token")
+        return None
+    try:
         reddit = praw.Reddit(client_id=token[0],
                         client_secret=token[1],
                         user_agent='my user agent')
         # print(reddit.user.me())
         return reddit
-    else:
-        print("unable to get token")
+    except:
+        print("unable to initialize Reddit instance")
 
 if __name__ == "__main__":
     links = get_subreddit_links(initialize(), 'osugame', 'top', 5, 'osu-bot')
     # print(links)
-    # print('\n\n\n\n\n\n\n\n\n')
+    # print('\n\n\n')
     print(parse_osu_links(links))
