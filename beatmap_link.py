@@ -8,15 +8,15 @@ def download(links):
     with open('creds/payload', 'rb') as handle:
         payload = pickle.loads(handle.read())
     r=s.get("https://osu.ppy.sh/forum/ucp.php?mode=login")
-    with open('responses/get_login', 'wb') as fd:
+    with open('responses/get_login.html', 'wb') as fd:
         for chunk in r.iter_content(chunk_size=128):
             fd.write(chunk)
     r=s.post("https://osu.ppy.sh/forum/ucp.php?mode=login", data=payload)
-    with open('responses/post_login', 'wb') as fd:
+    with open('responses/post_login.html', 'wb') as fd:
         for chunk in r.iter_content(chunk_size=128):
             fd.write(chunk)
     r=s.get("https://osu.ppy.sh/forum/index.php?success=1563054777")
-    with open('responses/get_loggedin', 'wb') as fd:
+    with open('responses/get_loggedin.html', 'wb') as fd:
         for chunk in r.iter_content(chunk_size=128):
             fd.write(chunk)
     for link in links:
