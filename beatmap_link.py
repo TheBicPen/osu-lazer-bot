@@ -15,14 +15,14 @@ def download(links):
     with open('responses/post_login.html', 'wb') as fd:
         for chunk in r.iter_content(chunk_size=128):
             fd.write(chunk)
-    r=s.get("https://osu.ppy.sh/forum/index.php?success=1563054777")
-    with open('responses/get_loggedin.html', 'wb') as fd:
-        for chunk in r.iter_content(chunk_size=128):
-            fd.write(chunk)
+    # r=s.get("https://osu.ppy.sh/forum/index.php?success=1563054777")
+    # with open('responses/get_loggedin.html', 'wb') as fd:
+    #     for chunk in r.iter_content(chunk_size=128):
+    #         fd.write(chunk)
     for link in links:
         r = s.get(link)
         # print(r)
-        with open('responses/last_link', 'wb') as fd:
+        with open('responses/last_link.osz', 'wb') as fd:
             for chunk in r.iter_content(chunk_size=128):
                 fd.write(chunk)
 
