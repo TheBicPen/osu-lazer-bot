@@ -55,10 +55,11 @@ def parse_osu_links(d):
                 #     top_on_map = url_re.search(link).group(0)
                 # elif "osu.ppy.sh/b/" in link and top_play_of_top_on_map == "":
                 #     top_play_of_top_on_map = url_re.search(link).group(0)
-                match = re.search("osu\.ppy\.sh/./\d*", link)
+                match = re.search("(http|https)://osu\.ppy\.sh/./\d*", link)
                 if match is not None:
                     # out_str = "{0}{1};".format(out_str,re.sub("osu.ppy.sh/", "", match.group(0)))
-                    new_val.append(re.sub("osu.ppy.sh/./", "", match.group(0)))
+                    # new_val.append(re.sub("osu.ppy.sh/./", "", match.group(0)))
+                    new_val.append(match.group(0))
             new_d[key] = new_val
             # out_str = out_str + "\n"
         # out_str.append("{0},{1},{2},{3},{4},{5}\n".format(beatmap, download, mapper, player, top_on_map, top_play_of_top_on_map))
