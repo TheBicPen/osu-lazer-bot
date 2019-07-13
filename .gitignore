@@ -105,7 +105,6 @@ venv.bak/
 
 # mypy
 .mypy_cache/
-login
-out
-out.html
-Archive 19-07-13 17-42-11.har
+
+#added through vscode
+responses/*
