@@ -3,7 +3,7 @@ import io
 import re
 
 
-
+osu_link = "(http|https)://osu\.ppy\.sh/./\d*"
 link_re = re.compile('\[.*?\]\(.*?\)')
 url_re = re.compile('\(.*?\)')
 # print(token)
@@ -13,8 +13,8 @@ def get_subreddit_links(reddit:praw.Reddit, subreddit:str, sort_type:str, num_po
     """
     Uses the Reddit instance to retrieve the first num_posts from subreddit, sorted by sort_type.
     Then searches for comments on these posts made by author (should be a bot that posts on all posts),
-    and finally returns a dict where the keys are the post titles, and the values are a list of markdown-formatted
-    links on that post by the given author. Only the first comment by author on each post is considered. 
+    and finally returns a list of lists of markdown-formatted links on that post by the given author.
+    Only the first comment by author on each post is considered. 
     
     Only the first set of comments is loaded, so the comment by author should be pinned or highly upvoted.
     See praw api docs for list of valid sort types - https://praw.readthedocs.io/en/latest/code_overview/models/subreddit.html 
@@ -28,7 +28,7 @@ def get_subreddit_links(reddit:praw.Reddit, subreddit:str, sort_type:str, num_po
     for submission in submissions:
         # print("Title: " + submission.title)
         comments = submission.comments.list()
-        link_list={} #heh
+        link_list=[] #heh
         try:
             for comment in comments:
                 if comment.author == author:
@@ -39,13 +39,14 @@ def get_subreddit_links(reddit:praw.Reddit, subreddit:str, sort_type:str, num_po
                     break
             link_set[submission.title] = link_list
         except Exception as e:
-            print("Error while parsing comments" + e)
+            print("Error while parsing comments", e)
     return link_set
 
 
 def parse_osu_links(d:dict):
     """
-    Parse a dict of markdown-links sent by osu-bot. Extract the osu.ppy.sh URLs, and 
+    Parse a dict of markdown-links sent by osu-bot. Extract the osu.ppy.sh URLs,
+    and return a dict where keys are unchanged, but the values are the URLs
     """
     # out_str = "title;beatmap;download;mapper;player;top_on_map;top_play_of_top_on_map\n"
     new_d = {}
@@ -67,7 +68,7 @@ def parse_osu_links(d:dict):
                 #     top_on_map = url_re.search(link).group(0)
                 # elif "osu.ppy.sh/b/" in link and top_play_of_top_on_map == "":
                 #     top_play_of_top_on_map = url_re.search(link).group(0)
-                match = re.search("(http|https)://osu\.ppy\.sh/./\d*", link)
+                match = re.search(osu_link, link)
                 if match is not None:
                     # out_str = "{0}{1};".format(out_str,re.sub("osu.ppy.sh/", "", match.group(0)))
                     # new_val.append(re.sub("osu.ppy.sh/./", "", match.group(0)))

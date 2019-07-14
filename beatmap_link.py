@@ -33,10 +33,13 @@ def download(links:list, filetype:str):
         r = s.get(link)
         # print(r)
         if r.ok:
-            with open('responses/downloads/{0}.{1}'.format(link, filetype), 'wb') as fd:
-                for chunk in r.iter_content(chunk_size=128):
-                    fd.write(chunk)
-            print("Downloaded {0}.osz".format(link))
+            try:
+                with open('responses/downloads/{0}.{1}'.format(link[link.rindex('/'):], filetype), 'wb') as fd:
+                    for chunk in r.iter_content(chunk_size=128):
+                        fd.write(chunk)
+                print("Downloaded {0}.osz".format(link))
+            except Exception as e:
+                print("Failed to write response content to file", e)
         else:
             print("Request for {0} failed with reason {1}.".format(link, r.reason))
 
@@ -62,10 +65,10 @@ def get_beatmap_links(links:dict):
 def main():
     links = fp.get_subreddit_links(fp.initialize(), 'osugame', 'top', 10, 'osu-bot')
     links = fp.parse_osu_links(links)
-    if len(links) > 2:      # only get the top plays of the day
-        links = links[:2]
+    while len(links) > 2:      # only get the top plays of the day
+        links.popitem()
     print_links(links)
-    download(get_download_links(links, "osz"))
+    download(get_beatmap_links(links), "osz")
 
 if __name__ == "__main__":
     main()
