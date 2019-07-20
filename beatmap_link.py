@@ -1,6 +1,7 @@
 import fetch_plays as fp
 import requests
 import pickle
+import sys
 
 
 def download(links:list, filetype:str):
@@ -29,19 +30,23 @@ def download(links:list, filetype:str):
     # with open('responses/get_loggedin.html', 'wb') as fd:
     #     for chunk in r.iter_content(chunk_size=128):
     #         fd.write(chunk)
+    stripped_links = []
     for link in links:
         r = s.get(link)
-        # print(r)
+        print(link, r.reason)
         if r.ok:
             try:
-                with open('responses/downloads/{0}.{1}'.format(link[link.rindex('/'):], filetype), 'wb') as fd:
+                link_nums = link[link.rindex('/')+1:]
+                with open('responses/downloads/{0}.{1}'.format(link_nums, filetype), 'wb') as fd:
                     for chunk in r.iter_content(chunk_size=128):
                         fd.write(chunk)
                 print("Downloaded {0}.osz".format(link))
+                stripped_links.append(link_nums)
             except Exception as e:
                 print("Failed to write response content to file", e)
         else:
             print("Request for {0} failed with reason {1}.".format(link, r.reason))
+    return stripped_links
 
 def print_links(links:list):
     if len(links) == 0:
@@ -63,12 +68,21 @@ def get_beatmap_links(links:dict):
     return out
 
 def main():
-    links = fp.get_subreddit_links(fp.initialize(), 'osugame', 'top', 10, 'osu-bot')
-    links = fp.parse_osu_links(links)
-    while len(links) > 2:      # only get the top plays of the day
-        links.popitem()
-    print_links(links)
-    download(get_beatmap_links(links), "osz")
+    post_to_links = fp.get_subreddit_links(fp.initialize(), 'osugame', 'top', 10, 'osu-bot')
+    post_to_links = fp.parse_osu_links(post_to_links)
+    while len(post_to_links) > 2:      # only get the top plays of the day
+        post_to_links.popitem()
+    print_links(post_to_links)
+    # download(get_beatmap_links(post_to_links), "osz")
+    raw_links = []
+    try:
+        for title,osu_links in post_to_links.items():
+            for link in osu_links:
+                raw_links.append(link[link.rindex('/')+1:])
+    except Exception as e:
+        print(e)
+    print(raw_links)
+    
 
 if __name__ == "__main__":
     main()

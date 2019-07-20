@@ -111,7 +111,7 @@ def initialize():
         print("unable to initialize Reddit instance")
 
 if __name__ == "__main__":
-    links = get_subreddit_links(initialize(), 'osugame', 'top', 5, 'osu-bot')
+    plays_to_linkset = get_subreddit_links(initialize(), 'osugame', 'top', 5, 'osu-bot')
     # print(links)
     # print('\n\n\n')
-    print(parse_osu_links(links))
+    print(parse_osu_links(plays_to_linkset))
