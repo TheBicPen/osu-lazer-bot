@@ -17,19 +17,19 @@ def download(links:list, filetype:str):
         r=s.get("https://osu.ppy.sh/forum/ucp.php?mode=login")
     except Exception as e:
         return "Failed to obtain osu credentials: {0}".format(e)
-    # with open('responses/get_login.html', 'wb') as fd:
-        # for chunk in r.iter_content(chunk_size=128):
-        #     fd.write(chunk)
+    with open('responses/get_login.html', 'wb') as fd:
+        for chunk in r.iter_content(chunk_size=128):
+            fd.write(chunk)
     r=s.post("https://osu.ppy.sh/forum/ucp.php?mode=login", data=payload)
-    # with open('responses/post_login.html', 'wb') as fd:
-        # for chunk in r.iter_content(chunk_size=128):
-        #     fd.write(chunk)
-    if not r.ok:
-        return "failed to authenticate:" + r.reason
-    # r=s.get("https://osu.ppy.sh/forum/index.php?success=1563054777")
-    # with open('responses/get_loggedin.html', 'wb') as fd:
-    #     for chunk in r.iter_content(chunk_size=128):
-    #         fd.write(chunk)
+    with open('responses/post_login.html', 'wb') as fd:
+        for chunk in r.iter_content(chunk_size=128):
+            fd.write(chunk)
+    # if not r.ok:
+    #     return "failed to authenticate:" + r.reason
+    r=s.get("https://osu.ppy.sh/forum/index.php?success=1563054777")
+    with open('responses/get_loggedin.html', 'wb') as fd:
+        for chunk in r.iter_content(chunk_size=128):
+            fd.write(chunk)
     stripped_links = []
     for link in links:
         r = s.get(link)
@@ -73,7 +73,8 @@ def main():
     while len(post_to_links) > 2:      # only get the top plays of the day
         post_to_links.popitem()
     print_links(post_to_links)
-    # download(get_beatmap_links(post_to_links), "osz")
+    down_result=download(get_beatmap_links(post_to_links), "osz")
+    print(down_result)
     raw_links = []
     try:
         for title,osu_links in post_to_links.items():
