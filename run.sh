@@ -10,7 +10,6 @@ echo files="$files"
 #source creds/osu_path
 
 #$osu_path
-   lib_path="$(< creds/LD_LIBRARY_PATH)"
-   osu_args="$(< creds/osu_path ) $files"
-   LD_LIBRARY_PATH="$lib_path" $osu_args
+   export LD_LIBRARY_PATH="$(< creds/LD_LIBRARY_PATH)"
+   $(< creds/osu_path) "$files"
     # sleep 5s; obs --start-recording &
