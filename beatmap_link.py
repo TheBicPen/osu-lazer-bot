@@ -31,26 +31,27 @@ def auth_official():
     # with open('responses/get_loggedin.html', 'wb') as fd:
     #     for chunk in r.iter_content(chunk_size=128):
     #         fd.write(chunk)
+
+    # no link processing
+
     return s
 
-def auth_noauth():
-    return requests.session()
-
-def link_bloodcat(links:list):
+def auth_bloodcat(links:list):
     """
+    Return a session suitable for bloodcat (no auth required).
     Convert a link that to https://bloodacat.com/osu/s/ <the original link's basename>
     """
     for i in range(len(links)):
         links[i] = "https://bloodcat.com/osu/s/"+ links[i][links[i].rindex('/')+1:]
+    return requests.Session()
 
-def download(auth_func, link_func, links:list, filetype:str):
+def download(auth_link, links:list, filetype:str):
     """    
-    Authenticate with auth_func and download objects (typically beatmaps) at links.
+    Authenticate and convert links with auth_link and download objects (typically beatmaps) at links.
     Each file is saved to 'responses/downloads/' with its name and being the text after the last '/'
     and the extension filetype.
     """
-    s=auth_func()
-    link_func(links)
+    s=auth_link(links)
     print("Links: ")
     print(links)
     stripped_links = []
@@ -97,7 +98,7 @@ def main():
     while len(post_to_links) > 2:      # only get the top plays of the day
         post_to_links.popitem()
     print_links(post_to_links)
-    down_result=download(auth_noauth, link_bloodcat, get_beatmap_links(post_to_links), "osz")
+    down_result=download(auth_bloodcat, get_beatmap_links(post_to_links), "osz")
     print("Download result: ")
     print(down_result)
     raw_links = []
