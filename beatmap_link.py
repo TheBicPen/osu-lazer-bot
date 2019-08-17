@@ -4,11 +4,9 @@ import pickle
 import sys
 
 
-def download(links:list, filetype:str):
+def auth_official():
     """
-    Log in with credentials stored in creds/payload (pickled), 
-    download objects (typically beatmaps) at links, and save each one with 
-    the provided file extension.
+    Log in with credentials stored in creds/payload (pickled) and return session
     """
     s = requests.session()
     try:
@@ -17,19 +15,44 @@ def download(links:list, filetype:str):
         r=s.get("https://osu.ppy.sh/forum/ucp.php?mode=login")
     except Exception as e:
         return "Failed to obtain osu credentials: {0}".format(e)
-    with open('responses/get_login.html', 'wb') as fd:
-        for chunk in r.iter_content(chunk_size=128):
-            fd.write(chunk)
+    # with open('responses/get_login.html', 'wb') as fd:
+    #     for chunk in r.iter_content(chunk_size=128):
+    #         fd.write(chunk)
     r=s.post("https://osu.ppy.sh/forum/ucp.php?mode=login", data=payload)
-    with open('responses/post_login.html', 'wb') as fd:
-        for chunk in r.iter_content(chunk_size=128):
-            fd.write(chunk)
-    # if not r.ok:
-    #     return "failed to authenticate:" + r.reason
-    r=s.get("https://osu.ppy.sh/forum/index.php?success=1563054777")
-    with open('responses/get_loggedin.html', 'wb') as fd:
-        for chunk in r.iter_content(chunk_size=128):
-            fd.write(chunk)
+    # with open('responses/post_login.html', 'wb') as fd:
+    #     for chunk in r.iter_content(chunk_size=128):
+    #         fd.write(chunk)
+    if not r.ok:
+        with open('responses/post_login.html', 'wb') as fd:
+            for chunk in r.iter_content(chunk_size=128):
+                fd.write(chunk)
+        return "failed to authenticate:" + r.reason
+    # r=s.get("https://osu.ppy.sh/forum/index.php?success=1563054777")
+    # with open('responses/get_loggedin.html', 'wb') as fd:
+    #     for chunk in r.iter_content(chunk_size=128):
+    #         fd.write(chunk)
+    return s
+
+def auth_noauth():
+    return requests.session()
+
+def link_bloodcat(links:list):
+    """
+    Convert a link that to https://bloodacat.com/osu/s/ <the original link's basename>
+    """
+    for i in range(len(links)):
+        links[i] = "https://bloodcat.com/osu/s/"+ links[i][links[i].rindex('/')+1:]
+
+def download(auth_func, link_func, links:list, filetype:str):
+    """    
+    Authenticate with auth_func and download objects (typically beatmaps) at links.
+    Each file is saved to 'responses/downloads/' with its name and being the text after the last '/'
+    and the extension filetype.
+    """
+    s=auth_func()
+    link_func(links)
+    print("Links: ")
+    print(links)
     stripped_links = []
     for link in links:
         r = s.get(link)
@@ -47,6 +70,7 @@ def download(links:list, filetype:str):
         else:
             print("Request for {0} failed with reason {1}.".format(link, r.reason))
     return stripped_links
+
 
 def print_links(links:list):
     if len(links) == 0:
@@ -73,7 +97,8 @@ def main():
     while len(post_to_links) > 2:      # only get the top plays of the day
         post_to_links.popitem()
     print_links(post_to_links)
-    down_result=download(get_beatmap_links(post_to_links), "osz")
+    down_result=download(auth_noauth, link_bloodcat, get_beatmap_links(post_to_links), "osz")
+    print("Download result: ")
     print(down_result)
     raw_links = []
     try:
