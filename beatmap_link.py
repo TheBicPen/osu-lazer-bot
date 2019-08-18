@@ -117,10 +117,10 @@ def get_beatmap_links(links:dict):
             out.append(urls[1])
     return out
 
-def main(down_prog, down_args):
+def main(down_prog, down_args, max_plays):
     post_to_links = fp.get_subreddit_links(fp.initialize(), 'osugame', 'top', 10, 'osu-bot') # get all osu-bot links
     post_to_links = fp.parse_osu_links(post_to_links) # remove all links not pointing to osu.ppy.sh
-    while len(post_to_links) > 2:      # only get the top 2 most upvoted plays of the day
+    while len(post_to_links) > int(max_plays):      # only get the top 2 most upvoted plays of the day
         post_to_links.popitem()
 
     down_result=download(auth_bloodcat, get_beatmap_links(post_to_links), "osz")
@@ -148,4 +148,4 @@ def main(down_prog, down_args):
 
 if __name__ == "__main__":
     print(sys.argv)
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1], sys.argv[2], sys.argv[3])

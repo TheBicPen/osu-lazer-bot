@@ -1,8 +1,8 @@
 
 
-python beatmap_link.py 'node' 'osu-replay-downloader/fetch.js' || exit 1
+python beatmap_link.py 'node' 'osu-replay-downloader/fetch.js' 3 || exit 1
 files=""
-for file in $(find "$(pwd)/responses/downloads" -type f); do
+for file in $(find $(pwd)/responses/downloads/ -type f -iname '*.osz' ; find $(pwd)/responses/downloads/ -type f -iname '*.osr'); do
    echo file="$file"
 	files="$files $file"
 done
