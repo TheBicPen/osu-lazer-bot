@@ -46,9 +46,11 @@ def get_subreddit_links(reddit:praw.Reddit, subreddit:str, sort_type:str, num_po
 def parse_osu_links(d:dict):
     """
     Parse a dict of markdown-links sent by osu-bot. Extract the osu.ppy.sh URLs,
-    and return a dict where keys are unchanged, but the values are the URLs
+    and return a dict where keys are unchanged, but the values are the URLs.
+    
+    link format: beatmap, download, mapper, top_on_map, player, top_play_of_player
     """
-    # out_str = "title;beatmap;download;mapper;player;top_on_map;top_play_of_top_on_map\n"
+    # out_str = "title;beatmap;download;mapper;top_on_map;player;top_play_of_player\n"
     new_d = {}
     for key,value in d.items():
         if value != []:

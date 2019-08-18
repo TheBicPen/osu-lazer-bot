@@ -1,5 +1,6 @@
 
-python beatmap_link.py
+
+python beatmap_link.py "$(< creds/osu_token.txt)" 'node' 'osu-replay-downloader/fetch.js' || exit 1
 files=""
 for file in $(find "$(pwd)/responses/downloads" -type f); do
    echo file="$file"
