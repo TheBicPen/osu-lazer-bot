@@ -12,5 +12,5 @@ echo files="$files"
 
 #$osu_path
    export LD_LIBRARY_PATH="$(< creds/LD_LIBRARY_PATH)"
-   $(< creds/osu_path) "$files"
+   $(< creds/osu_path) $files
     # sleep 5s; obs --start-recording &
