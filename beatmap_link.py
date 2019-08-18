@@ -142,7 +142,7 @@ def main(down_prog, down_args):
 
     for post, links in post_to_links.items():
         subprocess.call([down_prog, down_args, '--api-key', token, '--beatmap-id', links[0], \
-            '--user-id', links[4], '--output-file', '{0}-{1}.osr'.format(links[0], links[4])])
+            '--user-id', links[4], '--output-file', '../responses/downloads/{0}-{1}.osr'.format(links[0], links[4])])
 
 if __name__ == "__main__":
     print(sys.argv)
