@@ -115,9 +115,9 @@ def get_beatmap_links(links: dict):
     return out
 
 
-def main(down_prog, down_args, max_plays):
+def main(down_prog, down_args, max_plays, reddit_sort_type):
     post_to_links = fp.get_subreddit_links(
-        fp.initialize(), 'osugame', 'top', 10, 'osu-bot')  # get all osu-bot links
+        fp.initialize(), 'osugame', reddit_sort_type, max_plays, 'osu-bot')  # get all osu-bot links
     # remove all links not pointing to osu.ppy.sh
     post_to_links = fp.parse_osu_links(post_to_links)
     # only get the top 2 most upvoted plays of the day
@@ -146,7 +146,7 @@ def main(down_prog, down_args, max_plays):
         retcode = subprocess.call([down_prog, down_args, '--api-key', token, '--beatmap-id', links[0],
                                    '--user-id', links[4], '--output-file', 'responses/downloads/{0}-{1}.osr'.format(links[0], links[4])])
         if retcode != 0:
-            return 1
+            return retcode
 
 
 if __name__ == "__main__":

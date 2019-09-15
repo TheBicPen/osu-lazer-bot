@@ -20,10 +20,11 @@ def get_subreddit_links(reddit: praw.Reddit, subreddit: str, sort_type: str, num
     """
     subreddit = reddit.subreddit(subreddit)
     link_set = {}
+    num_posts=int(num_posts)
     if sort_type == 'hot':
         submissions = subreddit.hot(limit=num_posts)
-    elif sort_type == 'top':
-        submissions = subreddit.top('day', limit=num_posts)
+    elif sort_type in ['hour', 'day', 'week', 'month', 'year', 'all']:
+        submissions = subreddit.top(sort_type, limit=num_posts)
     for submission in submissions:
         comments = submission.comments.list()
         link_list = []  # heh
