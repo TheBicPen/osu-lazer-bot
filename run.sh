@@ -18,11 +18,12 @@ while [ $# -gt 0 ]; do
 done
 sort=$(echo "$sort" | tr -d -)
 num=$(echo "$num" | tr -d -)
+num_check=$[2 * $num + 1]
 script="$(dirname $0)/beatmap_link.py"
 helper='node osu-replay-downloader/fetch.js'
-echo launching script "$script" with options $helper "$num" "$sort"
+echo launching script "$script" with options $helper "$num_check" "$num" "$sort"
 
-python "$script" $helper "$num" "$sort" || exit 1
+python "$script" $helper "$num_check" "$num" "$sort" || exit 1
 files=""
 for file in $(find $(pwd)/responses/downloads/ -type f -iname '*.osz' ; find $(pwd)/responses/downloads/ -type f -iname '*.osr'); do
    echo file="$file"
