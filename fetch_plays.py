@@ -34,7 +34,6 @@ def get_subreddit_links(reddit: praw.Reddit, subreddit: str, sort_type: str, num
                     break
             if submission.title not in link_set.keys():
                 print("Post titled %s has no comments by %s in the first 50 comments".format(submission.title, author))
-            
         except Exception as e:
             print("Error while parsing comments", e)
     return link_set
