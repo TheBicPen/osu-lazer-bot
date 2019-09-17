@@ -1,3 +1,6 @@
+
+#stolen from https://github.com/christopher-dG/osu-bot.git
+
 import re
 
 # Regex stuff
