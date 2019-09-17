@@ -27,15 +27,14 @@ def get_subreddit_links(reddit: praw.Reddit, subreddit: str, sort_type: str, num
         submissions = subreddit.top(sort_type, limit=num_posts)
     for submission in submissions:
         comments = submission.comments.list()
-        link_list = []  # heh
         try:
             for comment in comments:
                 if comment.author == author:
-                    links = link_re.findall(comment.body)
-                    for link in links:
-                        link_list.append(link)
+                    link_set[submission.title] = link_re.findall(comment.body)
                     break
-            link_set[submission.title] = link_list
+            if submission.title not in link_set.keys():
+                print("Post titled %s has no comments by %s in the first 50 comments".format(submission.title, author))
+            
         except Exception as e:
             print("Error while parsing comments", e)
     return link_set

@@ -120,7 +120,7 @@ def main(down_prog, down_args, max_plays_checked, max_plays_returned, reddit_sor
         fp.initialize(), 'osugame', reddit_sort_type, int(max_plays_checked), 'osu-bot')  # get all osu-bot links
     # remove all links not pointing to osu.ppy.sh
     post_to_links = fp.parse_osu_links(post_to_links)
-    # only get the top 2 most upvoted plays of the day
+    # only get the top max_plays_returned most upvoted plays of the day
     while len(post_to_links) > int(max_plays_returned):
         post_to_links.popitem()
 
