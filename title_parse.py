@@ -25,3 +25,6 @@ playstyle_kb_re = re.compile("<div class=[\"']playstyle keyboard using[\"']></di
 playstyle_tb_re = re.compile("<div class=[\"']playstyle tablet using[\"']></div>")  # noqa
 playstyle_td_re = re.compile("<div class=[\"']playstyle touch using[\"']></div>")  # noqa
 osu_file_begin_re = re.compile("\A.*osu file format")
+
+
+

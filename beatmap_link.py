@@ -115,7 +115,7 @@ def get_beatmap_links(links: dict):
     return out
 
 
-def main(down_prog, down_args, max_plays_checked, max_plays_returned, reddit_sort_type):
+def main(download_replays, max_plays_checked, max_plays_returned, reddit_sort_type):
     post_to_links = fp.get_subreddit_links(
         fp.initialize(), 'osugame', reddit_sort_type, int(max_plays_checked), 'osu-bot')  # get all osu-bot links
     # remove all links not pointing to osu.ppy.sh
@@ -143,7 +143,8 @@ def main(down_prog, down_args, max_plays_checked, max_plays_returned, reddit_sor
         return None
 
     for post, links in post_to_links.items():
-        retcode = subprocess.call([down_prog, down_args, '--api-key', token, '--beatmap-id', links[0],
+        print('launching script {0} to download replays'.format(download_replays))
+        retcode = subprocess.call([download_replays, '--api-key', token, '--beatmap-id', links[0],
                                    '--user-id', links[4], '--output-file', 'responses/downloads/{0}-{1}.osr'.format(links[0], links[4])])
         if retcode != 0:
             return retcode
