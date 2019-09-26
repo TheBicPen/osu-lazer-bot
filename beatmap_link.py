@@ -144,17 +144,20 @@ def main(download_option, download_replays, max_plays_checked, max_plays_returne
             token = token.rstrip('\n')
         except:
             print("unable to read osu! API token")
-            return None
-
+            return 
+            
+        download_replays = download_replays.split(' ')
         for post, links in post_to_links.items():
-            # print(str(type(download_replays)) + download_replays)
-            download_replays = download_replays.split(' ')
-            download_replays.extend(['--api-key', token, '--beatmap-id', links[0], '--user-id', links[4],
-                        '--output-file', 'responses/downloads/{0}-{1}.osr'.format(links[0], links[4])])
-            print('launching script {0} to download replays'.format(download_replays))
-            retcode = subprocess.call(download_replays)
-            if retcode != 0:
-                return retcode
+            try:
+                helper_script = download_replays
+                helper_script.extend(['--api-key', token, '--beatmap-id', links[0], '--user-id', links[4],
+                            '--output-file', 'responses/downloads/{0}-{1}.osr'.format(links[0], links[4])])
+                print('launching script {0} to download replays'.format(helper_script))
+                retcode = subprocess.call(helper_script)
+                if retcode != 0:
+                    print("Helper script returned error code " + retcode)
+            except:
+                print("An error occurred while processing " + post)
     else:
         print("Skipping replay download")
 
