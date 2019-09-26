@@ -39,7 +39,7 @@ done
 sort=$(echo "$sort" | tr -d -)
 num=$(echo "$num" | tr -d -)
 num_check=$((2 * $num + 1))
-echo launching script "$script" with options "$download" "$helper" "$num_check" "$num" "$sort"
+# echo launching script "$script" with options "$download" "$helper" "$num_check" "$num" "$sort"
 
 python "$script" "$download" "$helper" "$num_check" "$num" "$sort" || exit 1
 files=""

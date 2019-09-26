@@ -78,8 +78,7 @@ def download(auth_link, links: list, filetype: str):
             except Exception as e:
                 print("Failed to write response content to file " + filename, e)
         else:
-            print("Request for {0} failed with reason {1}.".format(
-                link, r.reason))
+            print("Request for {0} failed because {1}".format(link, r.reason))
     return stripped_links
 
 
@@ -98,7 +97,7 @@ def print_links(links: dict):
     if len(links) == 0:
         print("no links in posts")
     out = ""
-    print("Links in dict: ")
+    # print("Links in dict: ")
     for post, urls in links.items():
         print(post + " " + str(urls))
     return out
@@ -115,7 +114,7 @@ def get_beatmap_links(links: dict):
     return out
 
 
-def main(download_option, download_replays, max_plays_checked, max_plays_returned, reddit_sort_type):
+def main(download_option, download_replays, max_plays_checked, max_plays_returned, reddit_sort_type, verbosity=1):
     post_to_links = fp.get_subreddit_links(
         fp.initialize(), 'osugame', reddit_sort_type, int(max_plays_checked), 'osu-bot')  # get all osu-bot links
     # remove all links not pointing to osu.ppy.sh
@@ -127,8 +126,8 @@ def main(download_option, download_replays, max_plays_checked, max_plays_returne
     if "beatmaps" in download_option:
         down_result = download(
             auth_bloodcat, get_beatmap_links(post_to_links), "osz")
-        print("Download result: ")
-        print(down_result)
+        # print("Download result: ")
+        # print(down_result)
     else:
         print("Skipping beatmap download")
 
@@ -157,7 +156,7 @@ def main(download_option, download_replays, max_plays_checked, max_plays_returne
                 if retcode != 0:
                     print("Helper script returned error code " + retcode)
             except:
-                print("An error occurred while processing " + post)
+                print("An error occurred while processing post " + post)
     else:
         print("Skipping replay download")
 
