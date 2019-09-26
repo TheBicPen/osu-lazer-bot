@@ -115,7 +115,7 @@ def get_beatmap_links(links: dict):
     return out
 
 
-def main(download_replays, max_plays_checked, max_plays_returned, reddit_sort_type):
+def main(download_option, download_replays, max_plays_checked, max_plays_returned, reddit_sort_type):
     post_to_links = fp.get_subreddit_links(
         fp.initialize(), 'osugame', reddit_sort_type, int(max_plays_checked), 'osu-bot')  # get all osu-bot links
     # remove all links not pointing to osu.ppy.sh
@@ -124,30 +124,39 @@ def main(download_replays, max_plays_checked, max_plays_returned, reddit_sort_ty
     while len(post_to_links) > int(max_plays_returned):
         post_to_links.popitem()
 
-    down_result = download(
-        auth_bloodcat, get_beatmap_links(post_to_links), "osz")
-    print("Download result: ")
-    print(down_result)
+    if "beatmaps" in download_option:
+        down_result = download(
+            auth_bloodcat, get_beatmap_links(post_to_links), "osz")
+        print("Download result: ")
+        print(down_result)
+    else:
+        print("Skipping beatmap download")
 
     for title in post_to_links.keys():
         get_digits("", post_to_links[title])
     print_links(post_to_links)
 
-    try:
-        token_file = io.open("creds/osu_token.txt", "r")
-        token = token_file.readline()
-        token_file.close()
-        token = token.rstrip('\n')
-    except:
-        print("unable to read osu! API token")
-        return None
+    if "replays" in download_option:
+        try:
+            token_file = io.open("creds/osu_token.txt", "r")
+            token = token_file.readline()
+            token_file.close()
+            token = token.rstrip('\n')
+        except:
+            print("unable to read osu! API token")
+            return None
 
-    for post, links in post_to_links.items():
-        print('launching script {0} to download replays'.format(download_replays))
-        retcode = subprocess.call([download_replays, '--api-key', token, '--beatmap-id', links[0],
-                                   '--user-id', links[4], '--output-file', 'responses/downloads/{0}-{1}.osr'.format(links[0], links[4])])
-        if retcode != 0:
-            return retcode
+        for post, links in post_to_links.items():
+            # print(str(type(download_replays)) + download_replays)
+            download_replays = download_replays.split(' ')
+            download_replays.extend(['--api-key', token, '--beatmap-id', links[0], '--user-id', links[4],
+                        '--output-file', 'responses/downloads/{0}-{1}.osr'.format(links[0], links[4])])
+            print('launching script {0} to download replays'.format(download_replays))
+            retcode = subprocess.call(download_replays)
+            if retcode != 0:
+                return retcode
+    else:
+        print("Skipping replay download")
 
 
 if __name__ == "__main__":

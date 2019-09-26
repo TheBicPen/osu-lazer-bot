@@ -21,6 +21,9 @@ while [ $# -gt 0 ]; do
      -no-download)
           helper="echo 'no download'"
           ;;
+     -replays-only)
+          
+          ;;
      -*)
           echo invalid option: "$1"
           ;;
