@@ -5,6 +5,12 @@ import subprocess
 import sys
 import io
 
+# ew global
+verbosity=1
+"""
+Verbosity levels: 0 - errors only, 1 - minimum info, 2 - maximum info
+"""
+
 
 def auth_official():
     """
@@ -59,12 +65,14 @@ def download(auth_link, links: list, filetype: str):
     Return relative filenames of downloaded files.
     """
     s = auth_link(links)
-    print("Downloading links: ")
-    print(links)
+    if verbosity > 1:
+        print("Downloading links: ")
+        print(links)
     stripped_links = []
     for link in links:
         r = s.get(link)
-        print(link, r.reason)
+        if verbosity > 1:
+            print(link, r.reason)
         if r.ok:
             try:
                 link_nums = link[link.rindex('/')+1:]
@@ -73,7 +81,8 @@ def download(auth_link, links: list, filetype: str):
                 with open(filename, 'wb') as fd:
                     for chunk in r.iter_content(chunk_size=128):
                         fd.write(chunk)
-                print("Downloaded {0}.osz".format(link))
+                if verbosity > 0:
+                    print("Downloaded {0}.osz".format(link))
                 stripped_links.append(filename)
             except Exception as e:
                 print("Failed to write response content to file " + filename, e)
@@ -114,7 +123,12 @@ def get_beatmap_links(links: dict):
     return out
 
 
-def main(download_option, download_replays, max_plays_checked, max_plays_returned, reddit_sort_type, verbosity=1):
+def main(download_option, download_replays, max_plays_checked, max_plays_returned, reddit_sort_type, verbosity_arg=1):
+    """
+    Verbosity levels: 0 - errors only, 1 - minimum info, 2 - maximum info
+    """
+    verbosity = verbosity_arg
+
     post_to_links = fp.get_subreddit_links(
         fp.initialize(), 'osugame', reddit_sort_type, int(max_plays_checked), 'osu-bot')  # get all osu-bot links
     # remove all links not pointing to osu.ppy.sh
@@ -126,10 +140,12 @@ def main(download_option, download_replays, max_plays_checked, max_plays_returne
     if "beatmaps" in download_option:
         down_result = download(
             auth_bloodcat, get_beatmap_links(post_to_links), "osz")
-        # print("Download result: ")
-        # print(down_result)
+        if verbosity > 1:
+            print("Download result: ")
+            print(down_result)
     else:
-        print("Skipping beatmap download")
+        if verbosity > 0:
+            print("Skipping beatmap download")
 
     for title in post_to_links.keys():
         get_digits("", post_to_links[title])
@@ -151,14 +167,16 @@ def main(download_option, download_replays, max_plays_checked, max_plays_returne
                 helper_script = download_replays
                 helper_script.extend(['--api-key', token, '--beatmap-id', links[0], '--user-id', links[4],
                             '--output-file', 'responses/downloads/{0}-{1}.osr'.format(links[0], links[4])])
-                print('launching script {0} to download replays'.format(helper_script))
+                if verbosity > 1:
+                    print('launching script {0} to download replays'.format(helper_script))
                 retcode = subprocess.call(helper_script)
                 if retcode != 0:
                     print("Helper script returned error code " + retcode)
             except:
                 print("An error occurred while processing post " + post)
     else:
-        print("Skipping replay download")
+        if verbosity > 0:
+            print("Skipping replay download")
 
 
 if __name__ == "__main__":
