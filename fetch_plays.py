@@ -25,6 +25,8 @@ def get_subreddit_links(reddit: praw.Reddit, subreddit: str, sort_type: str, num
         submissions = subreddit.hot(limit=num_posts)
     elif sort_type in ['hour', 'day', 'week', 'month', 'year', 'all']:
         submissions = subreddit.top(sort_type, limit=num_posts)
+    else:
+        submissions = subreddit.top('week', limit=num_posts)
     for submission in submissions:
         comments = submission.comments.list()
         try:
@@ -80,6 +82,8 @@ def initialize():
 
 
 if __name__ == "__main__":
-    plays_to_linkset = get_subreddit_links(
-        initialize(), 'osugame', 'top', 5, 'osu-bot')
-    print(parse_osu_links(plays_to_linkset))
+    reddit = initialize()
+    if reddit:
+        plays_to_linkset = get_subreddit_links(reddit, 'osugame', 'top', 5, 'osu-bot')
+        if plays_to_linkset:
+            print(parse_osu_links(plays_to_linkset))
