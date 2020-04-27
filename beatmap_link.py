@@ -117,14 +117,18 @@ def get_beatmap_links(links: dict):
     Takes a dict of lists, and returns a list of links to the beatmaps.
     """
     out = []
-    for post, urls in links.items():
+    # for post, urls in links.items():
+    for _, urls in links.items():
         if len(urls) > 1:
             out.append(urls[1])
     return out
 
 
-def main(download_option, download_replays, max_plays_checked, max_plays_returned, reddit_sort_type, verbosity_arg=1):
+def main(download_option, download_script, max_plays_checked, max_plays_returned, reddit_sort_type, verbosity_arg=1):
     """
+    Fetch r/osugame plays with options max_plays_checked, max_plays_returned, and reddit_sort_type.
+    Download beatmaps and/or replays based on the string in download_option using the script download_replays
+    
     Verbosity levels: 0 - errors only, 1 - minimum info, 2 - maximum info
     """
     verbosity = verbosity_arg
@@ -161,10 +165,10 @@ def main(download_option, download_replays, max_plays_checked, max_plays_returne
             print("unable to read osu! API token")
             return 
             
-        download_replays = download_replays.split(' ')
+        download_script = download_script.split(' ')
         for post, links in post_to_links.items():
             try:
-                helper_script = download_replays
+                helper_script = download_script
                 helper_script.extend(['--api-key', token, '--beatmap-id', links[0], '--user-id', links[4],
                             '--output-file', 'responses/downloads/{0}-{1}.osr'.format(links[0], links[4])])
                 if verbosity > 1:
@@ -181,4 +185,4 @@ def main(download_option, download_replays, max_plays_checked, max_plays_returne
 
 if __name__ == "__main__":
     print(sys.argv)
-    main(*sys.argv[1:])
+    main(*sys.argv[1:]) # hope that all the args are provided

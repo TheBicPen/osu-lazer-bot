@@ -3,9 +3,9 @@ import io
 import re
 
 
-osu_link = "(http|https)://osu\.ppy\.sh/./\d*"
-link_re = re.compile('\[.*?\]\(.*?\)')
-url_re = re.compile('\(.*?\)')
+osu_link = r"(http|https)://osu\.ppy\.sh/./\d*"
+link_re = re.compile(r'\[.*?\]\(.*?\)')
+url_re = re.compile(r'\(.*?\)')
 
 
 def get_subreddit_links(reddit: praw.Reddit, subreddit: str, sort_type: str, num_posts: int, author: str):
