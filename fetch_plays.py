@@ -3,7 +3,7 @@ import io
 import re
 
 
-osu_link = r"(http|https)://osu\.ppy\.sh/./\d*"
+osu_link = re.compile(r"(http|https)://osu\.ppy\.sh/./\d*")
 link_re = re.compile(r'\[.*?\]\(.*?\)')
 url_re = re.compile(r'\(.*?\)')
 
@@ -35,7 +35,7 @@ def get_subreddit_links(reddit: praw.Reddit, subreddit: str, sort_type: str, num
                     link_set[submission.title] = link_re.findall(comment.body)
                     break
             if submission.title not in link_set.keys():
-                print("Post titled {0} has no comments by {1} in the first 50 comments".format(submission.title, author))
+                print(f"Not a score post: '{submission.title}'")
         except Exception as e:
             print("Error while parsing comments", e)
     return link_set
@@ -62,16 +62,16 @@ def parse_osu_links(d: dict):
 
 def initialize():
     """
-    Read token file and return a Reddit instance
+    Read token file and return a Reddit instance.
+    1st line of file is client id, 2nd line is secret.
     """
     try:
-        token_file = io.open("creds/reddit_token.txt", "r")
-        token = token_file.readlines()
-        token_file.close()
+        with open("creds/reddit_token.txt", "r") as token_file:
+            token = token_file.readlines()
         token[0] = token[0].rstrip('\n')
     except:
         print("unable to read Reddit API token")
-        return None
+        return
     try:
         reddit = praw.Reddit(client_id=token[0],
                              client_secret=token[1],

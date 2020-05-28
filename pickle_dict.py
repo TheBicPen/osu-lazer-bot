@@ -1,12 +1,10 @@
 #!/usr/bin/python
-import sys
+from sys import stdin  # can read from pipes
 import ast
 import pickle
-import io
-d = {}
-d= ast.literal_eval(sys.stdin.readline())
+
+d= ast.literal_eval(stdin.readline())
 print(d)
-out = sys.stdin.readline()
-f = io.open(out, 'wb')
-pickle.dump(d, f)
-f.close()
+out = stdin.readline()
+with open(out, 'wb') as f:
+    pickle.dump(d, f)

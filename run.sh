@@ -56,7 +56,7 @@ done
 #source creds/LD_LIBRARY_PATH
 #source creds/osu_path
 
-if [ $run == 1 ]; then
+if [ $run = 1 ]; then
      #$osu_path
      export LD_LIBRARY_PATH="$(<creds/LD_LIBRARY_PATH)"
      $(<creds/osu_path) $files
