@@ -15,13 +15,16 @@ Verbosity levels: 0 - errors only, 1 - minimum info, 2 - maximum info
 def authenticate_beatmap_downloader(source: str, links: list):
     """
     Adapter for beatmap provider authenticators:
-    Authenticate a session with the beatmap provider `source`.
+    Return a session authenticated with the beatmap provider `source`.
     Format links for use with this provider.
     """
     if source == "official":
         return auth_official()
     elif source == "bloodcat":
         return auth_bloodcat(links)
+    else:
+        print(f"Invalid beatmap provider {source}. Using default 'official'")
+        return auth_official()
 
 
 def auth_official():
@@ -35,14 +38,14 @@ def auth_official():
             payload = pickle.load(handle)
         r = s.get("https://osu.ppy.sh/forum/ucp.php?mode=login")
     except Exception as e:
-        print(f"Failed to obtain osu credentials: {e}")
+        print("Failed to obtain osu credentials:", e)
         return
     r = s.post("https://osu.ppy.sh/forum/ucp.php?mode=login", data=payload)
     if not r.ok:
         with open('responses/post_login.html', 'wb') as fd:
             for chunk in r.iter_content(chunk_size=128):
                 fd.write(chunk)
-        print("failed to authenticate:" + r.reason)
+        print("Failed to authenticate:" + r.reason)
         return
 
     # no link processing
@@ -80,7 +83,6 @@ def download(auth_provider, links: list, filetype: str):
     """
     s = authenticate_beatmap_downloader(auth_provider, links)
     if verbosity > 1:
-        print("Downloading links: ")
         print(links)
     stripped_links = []
     for link in links:
@@ -90,18 +92,17 @@ def download(auth_provider, links: list, filetype: str):
         if r.ok:
             try:
                 link_nums = link[link.rindex('/')+1:]
-                filename = 'responses/downloads/{0}.{1}'.format(
-                    link_nums, filetype)
+                filename = f'responses/downloads/beatmapset-{link_nums}.{filetype}'
                 with open(filename, 'wb') as fd:
                     for chunk in r.iter_content(chunk_size=128):
                         fd.write(chunk)
-                if verbosity > 0:
-                    print("Downloaded {0}.osz".format(link))
+                if verbosity > 1:
+                    print(f"Downloaded beatmapset-{link}.osz")
                 stripped_links.append(filename)
             except Exception as e:
-                print("Failed to write response content to file " + filename, e)
+                print("Failed to write response content to file", filename, e)
         else:
-            print("Request for {0} failed because {1}".format(link, r.reason))
+            print(f"Request for beatmapset-{link} failed because {r.reason}")
     return stripped_links
 
 
@@ -146,7 +147,7 @@ def main(download_option, download_script, max_plays_checked, max_plays_returned
 
     Verbosity levels: 0 - errors only, 1 - minimum info, 2 - maximum info
     """
-    verbosity = verbosity_arg
+    verbosity = int(verbosity_arg)
 
     reddit = fp.initialize()
     if not reddit:
@@ -160,11 +161,12 @@ def main(download_option, download_script, max_plays_checked, max_plays_returned
         post_to_links.popitem()
 
     if "beatmaps" in download_option:
+        if verbosity > 0:
+            print("Downloading beatmaps")
         down_result = download(
             beatmap_provider, get_beatmap_links(post_to_links), "osz")
         if verbosity > 1:
-            print("Download result: ")
-            print(down_result)
+            print("Download result:\n", down_result)
     else:
         if verbosity > 0:
             print("Skipping beatmap download")
@@ -174,26 +176,27 @@ def main(download_option, download_script, max_plays_checked, max_plays_returned
     print_links(post_to_links)
 
     if "replays" in download_option:
+        if verbosity > 0:
+            print("Downloading replays")
         try:
             with open("creds/osu_token.txt", "r") as token_file:
                 token = token_file.readline().rstrip()
         except IOError as e:
-            print("unable to read osu! API token:", e)
+            print("Unable to read osu! API token:", e)
             return
 
-        download_script = download_script.split(' ')
         for post, links in post_to_links.items():
             try:
-                helper_script = download_script
+                helper_script = download_script.split()
                 helper_script.extend(['--api-key', token, '--beatmap-id', links[0], '--user-id', links[4],
-                                      '--output-file', 'responses/downloads/{0}-{1}.osr'.format(links[0], links[4])])
+                                      '--output-file', f'responses/downloads/beatmap-{links[0]}_user-id-{links[4]}.osr'])
                 if verbosity > 1:
-                    print('launching script {0} to download replays'.format(
-                        helper_script))
+                    print(
+                        f'Launching script {helper_script} to download replays')
                 try:
                     subprocess.run(helper_script).check_returncode()
                 except subprocess.CalledProcessError as e:
-                    print("Helper script returned error code", e)
+                    print("replay download script returned error", e)
             except Exception as e:
                 print("An error occurred while processing post", post, e)
     else:

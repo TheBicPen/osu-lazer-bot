@@ -31,7 +31,10 @@ def get_subreddit_links(reddit: praw.Reddit, subreddit: str, sort_type: str, num
         comments = submission.comments.list()
         try:
             for comment in comments:
-                if comment.author == author:
+                if isinstance(comment, praw.models.MoreComments):
+                    # print(f"No top comments by {author} in post '{submission.title}'")
+                    pass
+                elif comment.author == author:
                     link_set[submission.title] = link_re.findall(comment.body)
                     break
             if submission.title not in link_set.keys():
@@ -68,7 +71,7 @@ def initialize():
     try:
         with open("creds/reddit_token.txt", "r") as token_file:
             token = token_file.readlines()
-        token[0] = token[0].rstrip('\n')
+        token[0] = token[0].strip()
     except:
         print("unable to read Reddit API token")
         return
