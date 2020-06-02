@@ -167,7 +167,7 @@ if __name__ == '__main__':
   argparser.add_argument("--title", help="Video title", default="Test Title")
   argparser.add_argument("--description", help="Video description",
     default="Test Description")
-  argparser.add_argument("--category", default="22",
+  argparser.add_argument("--category", default="20",
     help="Numeric video category. " +
       "See https://developers.google.com/youtube/v3/docs/videoCategories/list")
   argparser.add_argument("--keywords", help="Video keywords, comma separated",

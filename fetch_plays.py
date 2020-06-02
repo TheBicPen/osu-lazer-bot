@@ -2,10 +2,77 @@ import praw
 import io
 import re
 
-
 osu_link = re.compile(r"(http|https)://osu\.ppy\.sh/./\d*")
 link_re = re.compile(r'\[.*?\]\(.*?\)')
+link_text_match_re = re.compile(r'\[(.*)\]\(.*?\)')
 url_re = re.compile(r'\(.*?\)')
+
+
+class PlayDetails:
+    beatmap_name = None
+    beatmap_link=None
+    beatmapset_download = None
+    mapper_name = None
+    mapper_link = None
+    top_on_map = None
+    player_name = None
+    player_link = None
+    top_play_of_player = None
+    post_title = None
+
+    _beatmap_re = re.compile(r"\[(.+?\[.+?\])\]\((https?://osu\.ppy\.sh/b/\d+[^\)\s]+)\)")
+    _beatmapset_download_re = re.compile(r"\[\(&#x2b07;\)\]\((https?://osu\.ppy\.sh/d/\d+)\s*\"Download this beatmap\"\)")
+    _mapper_re = re.compile(r"by \[(.*)\]\((https?://osu\.ppy\.sh/u/\d+)\s*\"\d+ ranked, \d+ qualified, \d+ loved, \d+ unranked\"\)")
+    _player_re = re.compile(r"Top Play[\s\S\n]*?\[(.+?)\]\((https?://osu\.ppy\.sh/u/\d+)(?:\s*?\"Previously known as \'.+?\'\")?\)")
+
+    def __init__(self, comment, title):
+        self.post_title = title
+        if match := re.search(self._beatmapset_download_re, comment):
+            self.beatmapset_download = match.group(1)
+        if match := re.search(self._beatmap_re, comment):
+            self.beatmap_name, self.beatmap_link = match.group(1,2)
+        if match := re.search(self._mapper_re, comment):
+            self.mapper_name, self.mapper_link = match.group(1,2)
+        if match := re.search(self._player_re, comment):
+            self.player_name, self.player_link = match.group(1,2)
+
+
+# def parse_osu_links(d: dict):
+#     """
+#     Parse a dict of markdown-links sent by osu-bot. Extract the osu.ppy.sh URLs,
+#     and return a dict where keys are unchanged, but the values are the URLs.
+
+#     link format: beatmap, download, mapper, top_on_map, player, top_play_of_player
+#     """
+#     new_d = {}
+#     for key, value in d.items():
+#         if value != []:
+#             new_val = []
+#             for link in value:
+#                 match = re.search(osu_link, link)
+#                 if match is not None:
+#                     new_val.append(match.group(0))
+#             new_d[key] = new_val
+#     return new_d
+
+
+
+def get_osugame_plays(sort_type: str, num_posts: int):
+    """
+    This is where I realized just how obtuse the rest of the code in this file is
+    This function handles the whole process.
+    """
+    reddit = initialize()
+    score_posts = get_subreddit_links(reddit, "osugame", sort_type, num_posts, "osu-bot")
+    plays=[]
+    for title, comment_body in score_posts.items():
+        try:
+            plays.append(PlayDetails(comment_body, title))
+        except Exception as e:
+            print(f"Error parsing post '{title}':\n{e}")
+            pass
+    return plays
+
 
 
 def get_subreddit_links(reddit: praw.Reddit, subreddit: str, sort_type: str, num_posts: int, author: str):
@@ -19,8 +86,8 @@ def get_subreddit_links(reddit: praw.Reddit, subreddit: str, sort_type: str, num
     See praw api docs for list of valid sort types - https://praw.readthedocs.io/en/latest/code_overview/models/subreddit.html 
     """
     subreddit = reddit.subreddit(subreddit)
-    link_set = {}
-    num_posts=int(num_posts)
+    num_posts = int(num_posts)
+    post_to_comment_by_author = {}
     if sort_type == 'hot':
         submissions = subreddit.hot(limit=num_posts)
     elif sort_type in ['hour', 'day', 'week', 'month', 'year', 'all']:
@@ -28,39 +95,21 @@ def get_subreddit_links(reddit: praw.Reddit, subreddit: str, sort_type: str, num
     else:
         submissions = subreddit.top('week', limit=num_posts)
     for submission in submissions:
+        submission.comments.replace_more(0) # we want top level comments only
         comments = submission.comments.list()
         try:
             for comment in comments:
                 if isinstance(comment, praw.models.MoreComments):
-                    # print(f"No top comments by {author} in post '{submission.title}'")
-                    pass
+                    print(f"No top comments by {author} in post '{submission.title}'")
                 elif comment.author == author:
-                    link_set[submission.title] = link_re.findall(comment.body)
+                    post_to_comment_by_author[submission.title] = comment.body
                     break
-            if submission.title not in link_set.keys():
+            if submission.title not in post_to_comment_by_author.keys():
                 print(f"Not a score post: '{submission.title}'")
         except Exception as e:
             print("Error while parsing comments", e)
-    return link_set
+    return post_to_comment_by_author
 
-
-def parse_osu_links(d: dict):
-    """
-    Parse a dict of markdown-links sent by osu-bot. Extract the osu.ppy.sh URLs,
-    and return a dict where keys are unchanged, but the values are the URLs.
-
-    link format: beatmap, download, mapper, top_on_map, player, top_play_of_player
-    """
-    new_d = {}
-    for key, value in d.items():
-        if value != []:
-            new_val = []
-            for link in value:
-                match = re.search(osu_link, link)
-                if match is not None:
-                    new_val.append(match.group(0))
-            new_d[key] = new_val
-    return new_d
 
 
 def initialize():
@@ -84,9 +133,13 @@ def initialize():
         print("unable to initialize Reddit instance")
 
 
+# if __name__ == "__main__":
+#     reddit = initialize()
+#     if reddit:
+#         plays_to_linkset = get_subreddit_links(
+#             reddit, 'osugame', 'top', 5, 'osu-bot')
+#         if plays_to_linkset:
+#             print(parse_osu_links(plays_to_linkset))
+
 if __name__ == "__main__":
-    reddit = initialize()
-    if reddit:
-        plays_to_linkset = get_subreddit_links(reddit, 'osugame', 'top', 5, 'osu-bot')
-        if plays_to_linkset:
-            print(parse_osu_links(plays_to_linkset))
+    print(get_osugame_plays("week", 10))
