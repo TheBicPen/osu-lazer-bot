@@ -20,7 +20,7 @@ class PlayDetails:
     top_play_of_player = None
     post_title = None
 
-    _beatmap_re = re.compile(r"\[(.+?\[.+?\])\]\((https?://osu\.ppy\.sh/b/\d+[^\)\s]+)\)")
+    _beatmap_re = re.compile(r"#### \[(.+?\[.+?\])\]\((https?://osu\.ppy\.sh/b/\d+[^\)\s]+)\)")
     _beatmapset_download_re = re.compile(r"\[\(&#x2b07;\)\]\((https?://osu\.ppy\.sh/d/\d+)\s*\"Download this beatmap\"\)")
     _mapper_re = re.compile(r"by \[(.*)\]\((https?://osu\.ppy\.sh/u/\d+)\s*\"\d+ ranked, \d+ qualified, \d+ loved, \d+ unranked\"\)")
     _player_re = re.compile(r"Top Play[\s\S\n]*?\[(.+?)\]\((https?://osu\.ppy\.sh/u/\d+)(?:\s*?\"Previously known as \'.+?\'\")?\)")
@@ -29,7 +29,7 @@ class PlayDetails:
         self.post_title = title
         if match := re.search(self._beatmapset_download_re, comment):
             self.beatmapset_download = match.group(1)
-        if match := re.search(self._beatmap_re, comment):
+        if match := re.match(self._beatmap_re, comment):
             self.beatmap_name, self.beatmap_link = match.group(1,2)
         if match := re.search(self._mapper_re, comment):
             self.mapper_name, self.mapper_link = match.group(1,2)
