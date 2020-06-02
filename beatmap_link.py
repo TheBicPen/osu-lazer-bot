@@ -140,40 +140,28 @@ def get_beatmap_links(links: dict):
     return out
 
 
-def main(download_option, download_script, max_plays_checked, max_plays_returned, reddit_sort_type, beatmap_provider="official", verbosity_arg=1):
+def main(download_option, download_script, max_plays_checked, reddit_sort_type, beatmap_provider="official", verbosity_arg=1):
     """
-    Fetch r/osugame plays with options max_plays_checked, max_plays_returned, and reddit_sort_type.
+    Fetch r/osugame plays with options max_plays_checked and reddit_sort_type.
     Download beatmaps and/or replays based on the string in download_option using the script download_replays
 
     Verbosity levels: 0 - errors only, 1 - minimum info, 2 - maximum info
     """
     verbosity = int(verbosity_arg)
 
-    reddit = fp.initialize()
-    if not reddit:
-        return None
-    post_to_links = fp.get_subreddit_links(reddit, 'osugame', reddit_sort_type, int(
-        max_plays_checked), 'osu-bot')  # get all osu-bot links
-    # remove all links not pointing to osu.ppy.sh
-    post_to_links = fp.parse_osu_links(post_to_links)
-    # only get the top max_plays_returned most upvoted plays of the day
-    while len(post_to_links) > int(max_plays_returned):
-        post_to_links.popitem()
+    plays = fp.get_osugame_plays(reddit_sort_type, max_plays_checked)
 
     if "beatmaps" in download_option:
         if verbosity > 0:
             print("Downloading beatmaps")
-        down_result = download(
-            beatmap_provider, get_beatmap_links(post_to_links), "osz")
+        beatmapset_links = [
+            play.beatmapset_download for play in plays if play.beatmapset_download]
+        down_result = download(beatmap_provider, beatmapset_links, "osz")
         if verbosity > 1:
             print("Download result:\n", down_result)
     else:
         if verbosity > 0:
             print("Skipping beatmap download")
-
-    for title in post_to_links.keys():
-        get_digits("", post_to_links[title])
-    print_links(post_to_links)
 
     if "replays" in download_option:
         if verbosity > 0:
@@ -185,11 +173,14 @@ def main(download_option, download_script, max_plays_checked, max_plays_returned
             print("Unable to read osu! API token:", e)
             return
 
-        for post, links in post_to_links.items():
+        for play in plays:
             try:
                 helper_script = download_script.split()
-                helper_script.extend(['--api-key', token, '--beatmap-id', links[0], '--user-id', links[4],
-                                      '--output-file', f'responses/downloads/beatmap-{links[0]}_user-id-{links[4]}.osr'])
+                safe_player_name = "".join(
+                    [x if x.isalnum() else "_" for x in play.player_name])
+                output_file = f'responses/downloads/mapset-{play.get_digits("beatmapset_download")}_user-id-{safe_player_name}.osr'
+                helper_script.extend(['--api-key', token, '--beatmap-id', play.get_digits("beatmap_link"), '--user-id',
+                                      play.get_digits("player_link"), '--output-file', output_file])
                 if verbosity > 1:
                     print(
                         f'Launching script {helper_script} to download replays')
@@ -198,7 +189,8 @@ def main(download_option, download_script, max_plays_checked, max_plays_returned
                 except subprocess.CalledProcessError as e:
                     print("replay download script returned error", e)
             except Exception as e:
-                print("An error occurred while processing post", post, e)
+                print("An error occurred while processing post",
+                      play.post_title, e)
     else:
         if verbosity > 0:
             print("Skipping replay download")

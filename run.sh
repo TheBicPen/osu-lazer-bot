@@ -3,7 +3,7 @@
 run=0
 download='replays beatmaps'
 sort='-week'
-num='5'
+num_check='5'
 script="$(dirname $0)/beatmap_link.py"
 helper='node osu-replay-downloader/fetch.js'
 
@@ -37,13 +37,12 @@ while [ $# -gt 0 ]; do
      shift
 done
 sort=$(echo "$sort" | tr -d -)
-num=$(echo "$num" | tr -d -)
-num_check=$((2 * $num + 1))
-# echo launching script "$script" with options "$download" "$helper" "$num_check" "$num" "$sort"
+num_check=$(echo "$num" | tr -d -)
+# echo launching script "$script" with options "$download" "$helper" "$num_check" "$sort"
 
 
 
-python3 "$script" "$download" "$helper" "$num_check" "$num" "$sort" || exit 1
+python3 "$script" "$download" "$helper" "$num_check" "$sort" || exit 1
 files=""
 for file in $(
      find $(pwd)/responses/downloads/ -type f -iname '*.osz'
