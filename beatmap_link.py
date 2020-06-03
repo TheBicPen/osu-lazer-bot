@@ -12,21 +12,6 @@ Verbosity levels: 0 - errors only, 1 - minimum info, 2 - maximum info
 """
 
 
-def authenticate_beatmap_downloader(source: str, links: list):
-    """
-    Adapter for beatmap provider authenticators:
-    Return a session authenticated with the beatmap provider `source`.
-    Format links for use with this provider.
-    """
-    if source == "official":
-        return auth_official()
-    elif source == "bloodcat":
-        return auth_bloodcat(links)
-    else:
-        print(f"Invalid beatmap provider {source}. Using default 'official'")
-        return auth_official()
-
-
 def auth_official():
     """
     Log in with credentials stored in creds/payload (pickled) and return session.
@@ -53,24 +38,16 @@ def auth_official():
     return s
 
 
-def get_digits(prepend: str, links: list):
-    """
-    Remove everything up to and including the last forward slash of each item in links
-    and add the prefix prepend to it.
-    """
-    try:
-        for i in range(len(links)):
-            links[i] = prepend + links[i][links[i].rindex('/')+1:]
-    except Exception as e:
-        print(e)
-
-
 def auth_bloodcat(links: list):
     """
     Return a session suitable for bloodcat (no auth required).
     Convert a link that to https://bloodacat.com/osu/s/<the original link's basename>
     """
-    get_digits("https://bloodcat.com/osu/s/", links)
+    for i, link in enumerate(links):
+        try:
+            links[i] = "https://bloodcat.com/osu/s/" + link[link.rindex('/')+1:]
+        except Exception as e:
+            print(e)
     return requests.Session()
 
 
@@ -81,7 +58,17 @@ def download(auth_provider, links: list, filetype: str):
     and the extension filetype.
     Return relative filenames of downloaded files.
     """
-    s = authenticate_beatmap_downloader(auth_provider, links)
+
+    # adapter for authentication (basically an inline function)
+    s = None
+    if auth_provider == "official":
+        s = auth_official()
+    elif auth_provider == "bloodcat":
+        s = auth_bloodcat(links)
+    else:
+        print(f"Invalid beatmap provider {auth_provider}. Using default 'official'")
+        s = auth_official()
+
     if verbosity > 1:
         print(links)
     stripped_links = []
@@ -104,40 +91,6 @@ def download(auth_provider, links: list, filetype: str):
         else:
             print(f"Request for beatmapset-{link} failed because {r.reason}")
     return stripped_links
-
-
-def download_replays(command: str, links: list):
-    """
-    Download replays by substituting the proper command arguments into command.
-    Links is a list of lists. Each list descibes a play and contains 
-    """
-    pass
-
-
-def print_links(links: dict):
-    """
-    Print a dictionary, parsing its values as strings. 
-    Return a string of every value in links appended.
-    """
-    if len(links) == 0:
-        print("no links in posts")
-    out = ""
-    # print("Links in dict: ")
-    for post, urls in links.items():
-        print(post, str(urls))
-    return out
-
-
-def get_beatmap_links(links: dict):
-    """
-    Takes a dict of lists, and returns a list of links to the beatmaps.
-    """
-    out = []
-    # for post, urls in links.items():
-    for _, urls in links.items():
-        if len(urls) > 1:
-            out.append(urls[1])
-    return out
 
 
 def main(download_option, download_script, max_plays_checked, reddit_sort_type, beatmap_provider="official", verbosity_arg=1):

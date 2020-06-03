@@ -1,11 +1,5 @@
 import praw
-import io
 import re
-
-osu_link = re.compile(r"(http|https)://osu\.ppy\.sh/./\d*")
-link_re = re.compile(r'\[.*?\]\(.*?\)')
-link_text_match_re = re.compile(r'\[(.*)\]\(.*?\)')
-url_re = re.compile(r'\(.*?\)')
 
 
 class PlayDetails:
@@ -19,6 +13,7 @@ class PlayDetails:
     player_link = None
     top_play_of_player = None
     post_title = None
+    comment_text = None
 
     _beatmap_re = re.compile(r"#### \[(.+?\[.+?\])\]\((https?://osu\.ppy\.sh/b/\d+[^\)\s]+)\)")
     _beatmapset_download_re = re.compile(r"\[\(&#x2b07;\)\]\((https?://osu\.ppy\.sh/d/\d+)\s*\"Download this beatmap\"\)")
@@ -27,6 +22,7 @@ class PlayDetails:
 
     def __init__(self, comment, title):
         self.post_title = title
+        self.comment_text = comment
         if match := re.search(self._beatmapset_download_re, comment):
             self.beatmapset_download = match.group(1)
         if match := re.match(self._beatmap_re, comment):
@@ -53,26 +49,6 @@ class PlayDetails:
             last_slash = prop_val.rfind('/')
             return prop_val[last_slash + 1:] if last_slash != -1 else ""
         return None
-
-
-# def parse_osu_links(d: dict):
-#     """
-#     Parse a dict of markdown-links sent by osu-bot. Extract the osu.ppy.sh URLs,
-#     and return a dict where keys are unchanged, but the values are the URLs.
-
-#     link format: beatmap, download, mapper, top_on_map, player, top_play_of_player
-#     """
-#     new_d = {}
-#     for key, value in d.items():
-#         if value != []:
-#             new_val = []
-#             for link in value:
-#                 match = re.search(osu_link, link)
-#                 if match is not None:
-#                     new_val.append(match.group(0))
-#             new_d[key] = new_val
-#     return new_d
-
 
 
 def get_osugame_plays(sort_type: str, num_posts: int):
@@ -150,15 +126,6 @@ def initialize():
         return reddit
     except:
         print("unable to initialize Reddit instance")
-
-
-# if __name__ == "__main__":
-#     reddit = initialize()
-#     if reddit:
-#         plays_to_linkset = get_subreddit_links(
-#             reddit, 'osugame', 'top', 5, 'osu-bot')
-#         if plays_to_linkset:
-#             print(parse_osu_links(plays_to_linkset))
 
 if __name__ == "__main__":
     print(get_osugame_plays("week", 10))
