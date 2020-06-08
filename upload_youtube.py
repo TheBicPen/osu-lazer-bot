@@ -137,6 +137,8 @@ def resumable_upload(insert_request):
     try:
       print ("Uploading file...")
       status, response = insert_request.next_chunk()
+      if status:
+        print(f"Uploaded {int(status.progress() * 100)}%.")
       if response is not None:
         if 'id' in response:
           print(("Video id '%s' was successfully uploaded." % response['id']))
