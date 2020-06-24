@@ -32,6 +32,7 @@ class PlayDetails:
         if match := re.search(self._player_re, comment):
             self.player_name, self.player_link = match.group(1,2)
     
+    
     def get_digits(self, prop_name: str):
         """
         Return only the digits of a PlayDetails property by name.
@@ -98,6 +99,7 @@ def get_subreddit_links(reddit: praw.Reddit, subreddit: str, sort_type: str, num
                     print(f"No top comments by {author} in post '{submission.title}'")
                 elif comment.author == author:
                     post_to_comment_by_author[submission.title] = comment.body
+                    print(f"Score post: '{submission.title}'")
                     break
             if submission.title not in post_to_comment_by_author.keys():
                 print(f"Not a score post: '{submission.title}'")
