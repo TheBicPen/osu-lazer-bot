@@ -45,8 +45,8 @@ num_check=$(echo "$num" | tr -d -)
 python3 "$script" "$download" "$helper" "$num_check" "$sort" || exit 1
 files=""
 for file in $(
-     find $(pwd)/responses/downloads/ -type f -iname '*.osz'
-     find $(pwd)/responses/downloads/ -type f -iname '*.osr'
+     find $(pwd)/downloads/ -type f -iname '*.osz'
+     find $(pwd)/downloads/ -type f -iname '*.osr'
 ); do
      echo file="$file"
      files="$files $file"

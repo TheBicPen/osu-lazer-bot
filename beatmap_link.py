@@ -32,8 +32,8 @@ def auth_official():
     if r.status_code == 302:
         return s
     elif r.status_code == 200:
-        print("Failed to authenticate on official server. See 'responses/post_login.html'")
-        with open('responses/post_login.html', 'wb') as fd:
+        print("Failed to authenticate on official server. See 'downloads/post_login.html'")
+        with open('downloads/post_login.html', 'wb') as fd:
             for chunk in r.iter_content(chunk_size=128):
                 fd.write(chunk)
     else:
@@ -54,7 +54,7 @@ def auth_bloodcat(links: list):
 def download(links: list, filetype: str, auth_provider=None):
     """    
     Authenticate and convert links with auth_link and download objects (typically beatmaps) at links.
-    Each file is saved to 'responses/downloads/' with its name and being the text after the last '/'
+    Each file is saved to 'downloads/' with its name and being the text after the last '/'
     and the extension filetype.
     Return relative filenames of downloaded files.
     """
@@ -77,7 +77,7 @@ def download(links: list, filetype: str, auth_provider=None):
         if r.ok:
             try:
                 link_nums = link[link.rindex('/')+1:]
-                filename = f'responses/downloads/beatmapset-{link_nums}.{filetype}'
+                filename = f'downloads/beatmapset-{link_nums}.{filetype}'
                 with open(filename, 'wb') as fd:
                     for chunk in r.iter_content(chunk_size=128):
                         fd.write(chunk)
@@ -127,7 +127,7 @@ def main(download_option, download_script, max_plays_checked, reddit_sort_type, 
                 helper_script = download_script.split()
                 safe_player_name = "".join(
                     [x if x.isalnum() else "_" for x in play.player_name])
-                output_file = f'responses/downloads/mapset-{play.get_digits("beatmapset_download")}_user-id-{safe_player_name}.osr'
+                output_file = f'downloads/mapset-{play.get_digits("beatmapset_download")}_user-id-{safe_player_name}.osr'
                 helper_script.extend(['--api-key', token, '--beatmap-id', play.get_digits("beatmap_link"), '--user-id',
                                       play.get_digits("player_link"), '--output-file', output_file])
                 # print(f'Launching script {helper_script} to download replays')
