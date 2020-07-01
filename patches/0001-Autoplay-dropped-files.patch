@@ -1,0 +1,59 @@
+From 63a124b2eb82da28f48b98000e171596e8b9b989 Mon Sep 17 00:00:00 2001
+From: bic <mashkal2000@gmail.com>
+Date: Tue, 30 Jun 2020 17:35:18 -0700
+Subject: [PATCH] Autoplay dropped files
+
+---
+ osu.Game/Database/ArchiveModelManager.cs | 6 ++++++
+ osu.Game/OsuGame.cs                      | 2 +-
+ osu.Game/Overlays/NotificationOverlay.cs | 4 ++--
+ 3 files changed, 9 insertions(+), 3 deletions(-)
+
+diff --git a/osu.Game/Database/ArchiveModelManager.cs b/osu.Game/Database/ArchiveModelManager.cs
+index 915d980d2..43c4f10bb 100644
+--- a/osu.Game/Database/ArchiveModelManager.cs
++++ b/osu.Game/Database/ArchiveModelManager.cs
+@@ -173,6 +173,12 @@ protected async Task<IEnumerable<TModel>> Import(ProgressNotification notificati
+                         PresentImport?.Invoke(imported);
+                         return true;
+                     };
++
++                    // autoplay imported replays
++                    if(imported.First().GetType() == typeof(osu.Game.Scoring.ScoreInfo))
++                    {
++                        notification.CompletionClickAction();
++                    }
+                 }
+ 
+                 notification.State = ProgressNotificationState.Completed;
+diff --git a/osu.Game/OsuGame.cs b/osu.Game/OsuGame.cs
+index b0d7b14d3..af29039ad 100644
+--- a/osu.Game/OsuGame.cs
++++ b/osu.Game/OsuGame.cs
+@@ -545,7 +545,7 @@ protected override void LoadComplete()
+ 
+             ScoreManager.PostNotification = n => notifications?.Post(n);
+             ScoreManager.GetStableStorage = GetStorageForStableInstall;
+-            ScoreManager.PresentImport = items => PresentScore(items.First());
++            ScoreManager.PresentImport = items => PresentScore(items.First(), ScorePresentType.Gameplay);
+ 
+             Container logoContainer;
+             BackButton.Receptor receptor;
+diff --git a/osu.Game/Overlays/NotificationOverlay.cs b/osu.Game/Overlays/NotificationOverlay.cs
+index 41160d10e..5deb795fc 100644
+--- a/osu.Game/Overlays/NotificationOverlay.cs
++++ b/osu.Game/Overlays/NotificationOverlay.cs
+@@ -120,8 +120,8 @@ protected override void LoadComplete()
+             var section = sections.Children.FirstOrDefault(s => s.AcceptTypes.Any(accept => accept.IsAssignableFrom(ourType)));
+             section?.Add(notification, notification.DisplayOnTop ? -runningDepth : runningDepth);
+ 
+-            if (notification.IsImportant)
+-                Show();
++            // if (notification.IsImportant)
++            //     Show();
+ 
+             updateCounts();
+         });
+-- 
+2.25.1
+
