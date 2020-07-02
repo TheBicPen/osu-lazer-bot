@@ -1,0 +1,40 @@
+From 3ade5151d02a77d4262b91f368042247bdc4b990 Mon Sep 17 00:00:00 2001
+From: bic <mashkal2000@gmail.com>
+Date: Thu, 2 Jul 2020 12:50:17 -0700
+Subject: [PATCH 2/2] Auto-skip intro. Remove visual settings overlay.
+
+---
+ osu.Game/Screens/Play/HUDOverlay.cs  | 2 +-
+ osu.Game/Screens/Play/SkipOverlay.cs | 3 +++
+ 2 files changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/osu.Game/Screens/Play/HUDOverlay.cs b/osu.Game/Screens/Play/HUDOverlay.cs
+index f09745cf7..834fcd9e2 100644
+--- a/osu.Game/Screens/Play/HUDOverlay.cs
++++ b/osu.Game/Screens/Play/HUDOverlay.cs
+@@ -192,7 +192,7 @@ private void replayLoadedValueChanged(ValueChangedEvent<bool> e)
+ 
+             if (e.NewValue)
+             {
+-                PlayerSettingsOverlay.Show();
++                // PlayerSettingsOverlay.Show();
+                 ModDisplay.FadeIn(200);
+                 KeyCounter.Margin = new MarginPadding(10) { Bottom = 30 };
+             }
+diff --git a/osu.Game/Screens/Play/SkipOverlay.cs b/osu.Game/Screens/Play/SkipOverlay.cs
+index b123757de..82a459adc 100644
+--- a/osu.Game/Screens/Play/SkipOverlay.cs
++++ b/osu.Game/Screens/Play/SkipOverlay.cs
+@@ -114,6 +114,9 @@ protected override void Update()
+ 
+             var progress = fadeOutBeginTime <= displayTime ? 1 : Math.Max(0, 1 - (gameplayClock.CurrentTime - displayTime) / (fadeOutBeginTime - displayTime));
+ 
++            if (fadeOutBeginTime >= gameplayClock.CurrentTime)
++                button.Click();
++        
+             remainingTimeBox.Width = (float)Interpolation.Lerp(remainingTimeBox.Width, progress, Math.Clamp(Time.Elapsed / 40, 0, 1));
+ 
+             button.Enabled.Value = progress > 0;
+-- 
+2.25.1
+
