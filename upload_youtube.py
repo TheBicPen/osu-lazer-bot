@@ -80,7 +80,7 @@ def get_authenticated_service(args):
     scope=YOUTUBE_UPLOAD_SCOPE,
     message=MISSING_CLIENT_SECRETS_MESSAGE)
 
-  storage = Storage("creds/youtube-oauth2.json")
+  storage = Storage("creds/youtube_oauth2.json")
   credentials = storage.get()
 
   if credentials is None or credentials.invalid:
