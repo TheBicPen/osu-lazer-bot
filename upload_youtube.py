@@ -186,3 +186,4 @@ if __name__ == '__main__':
     initialize_upload(youtube, args)
   except HttpError as e:
     print(f"An HTTP error {e.resp.status} occurred:\n", e.content)
+    sys.exit(1)
