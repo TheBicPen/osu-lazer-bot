@@ -1,7 +1,7 @@
-rec_folder="$(cat creds/recording_folder.txt)"
-file_to_upload="$(ls $rec_folder -t -p | grep -v / | head -n 1)"
-full_path="$rec_folder/$file_to_upload"
-echo "$file_to_upload"
+REC_FOLDER="$(cat creds/recording_folder.txt)"
+FILE_TO_UPLOAD="$(ls $REC_FOLDER -t -p | grep -v / | head -n 1)"
+FULL_PATH="$REC_FOLDER/$FILE_TO_UPLOAD"
+echo "$FILE_TO_UPLOAD"
 
 
 if ! type "python" > /dev/null; then
@@ -9,9 +9,9 @@ if ! type "python" > /dev/null; then
 	. "./env/bin/activate"
 fi
 
-python upload_youtube.py --file="$full_path" --description="
+python upload_youtube.py --file="$FULL_PATH" --description="
 
 
 osu!lazer displays replays differently than stable, so there may be extra 100s/50s/misses shown. 
-The score screen at the end is correct." --category=20 --title="$file_to_upload" && 
-mv "$full_path" "$rec_folder/done/$file_to_upload" -v
+The score screen at the end is correct." --category=20 --title="$FILE_TO_UPLOAD" && 
+mv "$FULL_PATH" "$REC_FOLDER/done/$FILE_TO_UPLOAD" -v
