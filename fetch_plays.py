@@ -36,24 +36,30 @@ class PlayDetails:
         if match := re.search(self._player_re, comment):
             self.player_name, self.player_link = match.group(1, 2)
 
-    def get_digits(self, prop_name: str):
-        """
-        Return only the digits of a PlayDetails property by name.
-        """
-        prop_val = None
-        if prop_name == "beatmap_link":
-            prop_val = self.beatmap_link
-        elif prop_name == "beatmapset_download":
-            prop_val = self.beatmapset_download
-        elif prop_name == "mapper_link":
-            prop_val = self.mapper_link
-        elif prop_name == "player_link":
-            prop_val = self.player_link
-        if prop_val:
-            last_slash = prop_val.rfind('/')
-            return prop_val[last_slash + 1:] if last_slash != -1 else ""
-        return None
+    # def get_digits(self, prop_name: str):
+    #     """
+    #     Return only the digits of a PlayDetails property by name.
+    #     """
+    #     prop_val = None
+    #     if prop_name == "beatmap_link":
+    #         prop_val = self.beatmap_link
+    #     elif prop_name == "beatmapset_download":
+    #         prop_val = self.beatmapset_download
+    #     elif prop_name == "mapper_link":
+    #         prop_val = self.mapper_link
+    #     elif prop_name == "player_link":
+    #         prop_val = self.player_link
+    #     if prop_val:
+    #         last_slash = prop_val.rfind('/')
+    #         return prop_val[last_slash + 1:] if last_slash != -1 else ""
+    #     return None
 
+def get_safe_name(string):
+    return "".join([x if x.isalnum() else "_" for x in string])
+
+def get_digits(link):
+    last_slash = link.rfind('/')
+    return link[last_slash + 1:] if last_slash != -1 else None
 
 def get_osugame_plays(sort_type: str, num_posts: int):
     """
@@ -91,7 +97,6 @@ def get_subreddit_links(reddit: praw.Reddit, subreddit: str, sort_type: str, num
     elif sort_type in ['hour', 'day', 'week', 'month', 'year', 'all']:
         submissions = subreddit.top(sort_type, limit=num_posts)
     else:
-        #     submissions = subreddit.top('week', limit=num_posts)
         return
     for submission in submissions:
         submission.comments.replace_more(0)  # we want top level comments only

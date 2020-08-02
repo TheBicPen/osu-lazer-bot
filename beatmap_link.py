@@ -40,18 +40,18 @@ def auth_official():
         print("An error occurred while authenticating. Reason:", r.reason)
 
 
-def auth_bloodcat(links: list):
+def auth_bloodcat(plays: list):
     """
     Return a session suitable for bloodcat (no auth required).
     Convert a link that to https://bloodacat.com/osu/s/<the original link's basename>
     """
-    for i, link in enumerate(links):
-        links[i] = link.replace("https://osu.ppy.sh/d/",
-                                "https://bloodcat.com/osu/s/")
+    for i, play in enumerate(plays):
+        plays[i].beatmapset_download = play.beatmapset_download.replace("https://osu.ppy.sh/d/",
+                                                                        "https://bloodcat.com/osu/s/")
     return requests.Session()
 
 
-def download(links: list, filetype: str, auth_provider=None):
+def download(plays: list, filetype: str, auth_provider=None):
     """    
     Authenticate and convert links with auth_link and download objects (typically beatmaps) at links.
     Each file is saved to 'downloads/' with its name and being the text after the last '/'
@@ -62,32 +62,32 @@ def download(links: list, filetype: str, auth_provider=None):
     if auth_provider == "official":
         s = auth_official()
     elif auth_provider == "bloodcat":
-        s = auth_bloodcat(links)
+        s = auth_bloodcat(plays)
     else:
         s = auth_official()
         if not s:
             print("Using bloodcat mirror")
-            s = auth_bloodcat(links)
+            s = auth_bloodcat(plays)
 
     # print(links)
-    stripped_links = []
-    for link in links:
+    filenames = []
+    for play in plays:
+        link = play.beatmapset_download
         r = s.get(link)
         # print(link, r.reason)
         if r.ok:
             try:
-                link_nums = link[link.rindex('/')+1:]
-                filename = f'downloads/beatmapset-{link_nums}.{filetype}'
+                filename = f'downloads/beatmapset-{play.get_digits("beatmapset_download")}.{filetype}'
                 with open(filename, 'wb') as fd:
                     for chunk in r.iter_content(chunk_size=128):
                         fd.write(chunk)
                 # print(f"Downloaded beatmapset-{link}.osz")
-                stripped_links.append(filename)
+                filenames.append(filename)
             except Exception as e:
                 print("Failed to write response content to file", filename, e)
         else:
-            print(f"Request for beatmapset-{link} failed because {r.reason}")
-    return stripped_links
+            print(f"Request for beatmapset-{play} failed because {r.reason}")
+    return filenames
 
 
 def main(download_option, download_script, max_plays_checked, reddit_sort_type, beatmap_provider=None):
@@ -95,19 +95,15 @@ def main(download_option, download_script, max_plays_checked, reddit_sort_type, 
     Fetch r/osugame plays with options max_plays_checked and reddit_sort_type.
     Download beatmaps and/or replays based on the string in download_option using the script download_replays.
     Beatmaps are downloaded from beatmap_provider
-
-    Verbosity levels: 0 - errors only, 1 - minimum info, 2 - maximum info
     """
 
     plays = fp.get_osugame_plays(reddit_sort_type, max_plays_checked)
-
+    out = {}
     print()
     if "beatmaps" in download_option:
         print("Downloading beatmaps")
-        beatmapset_links = [
-            play.beatmapset_download for play in plays if play.beatmapset_download]
-        down_result = download(beatmapset_links, "osz",
-                               auth_provider=beatmap_provider)
+        down_result = download(plays, "osz", auth_provider=beatmap_provider)
+        out["beatmaps"] = down_result
         # print("Download result:\n", down_result)
     else:
         print("Skipping beatmap download")
@@ -122,24 +118,32 @@ def main(download_option, download_script, max_plays_checked, reddit_sort_type, 
             print("Unable to read osu! API token:", e)
             return
 
+        replay_infos = []
         for play in plays:
             try:
+                replay_info = {"play": play}
+                replay_infos.append(replay_info)
                 helper_script = download_script.split()
-                safe_player_name = "".join(
-                    [x if x.isalnum() else "_" for x in play.player_name])
-                output_file = f'downloads/mapset-{play.get_digits("beatmapset_download")}_user-id-{safe_player_name}.osr'
-                helper_script.extend(['--api-key', token, '--beatmap-id', play.get_digits("beatmap_link"), '--user-id',
-                                      play.get_digits("player_link"), '--output-file', output_file])
+                safe_player_name = fp.get_safe_name(play.player_name)
+                output_file = f'downloads/mapset-{fp.get_digits(play.beatmapset_download)}_user-id-{safe_player_name}.osr'
+                helper_script.extend(['--api-key', token, '--beatmap-id', fp.get_digits(play.beatmap_link), '--user-id',
+                                      fp.get_digits(play.player_link), '--output-file', output_file])
                 # print(f'Launching script {helper_script} to download replays')
+                replay_info["replay_file"] = output_file
                 try:
                     subprocess.run(helper_script).check_returncode()
+                    replay_info["status"] = "downloaded"
                 except subprocess.CalledProcessError as e:
                     print("Replay download script returned error", e)
+                    replay_info["status"] = "error - download"
             except Exception as e:
                 print("An error occurred while processing post",
                       play.post_title, e)
+                replay_info["status"] = "error - pre-download"
+        out["plays"] = replay_infos
     else:
         print("Skipping replay download")
+    return out
 
 
 if __name__ == "__main__":
