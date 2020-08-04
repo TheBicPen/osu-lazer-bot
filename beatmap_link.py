@@ -72,21 +72,24 @@ def download(plays: list, filetype: str, auth_provider=None):
     # print(links)
     filenames = []
     for play in plays:
-        link = play.beatmapset_download
-        r = s.get(link)
-        # print(link, r.reason)
-        if r.ok:
-            try:
-                filename = f'downloads/beatmapset-{play.get_digits("beatmapset_download")}.{filetype}'
-                with open(filename, 'wb') as fd:
-                    for chunk in r.iter_content(chunk_size=128):
-                        fd.write(chunk)
-                # print(f"Downloaded beatmapset-{link}.osz")
-                filenames.append(filename)
-            except Exception as e:
-                print("Failed to write response content to file", filename, e)
-        else:
-            print(f"Request for beatmapset-{play} failed because {r.reason}")
+        try:
+            link = play.beatmapset_download
+            r = s.get(link)
+            # print(link, r.reason)
+            if r.ok:
+                try:
+                    filename = f'downloads/beatmapset-{fp.get_safe_name(play.beatmap_name)}.{filetype}'
+                    with open(filename, 'wb') as fd:
+                        for chunk in r.iter_content(chunk_size=128):
+                            fd.write(chunk)
+                    # print(f"Downloaded beatmapset-{link}.osz")
+                    filenames.append(filename)
+                except Exception as e:
+                    print("Failed to write response content to file", play.beatmapset_download, e)
+            else:
+                print(f"Request for beatmapset-{play} failed because {r.reason}")
+        except Exception as e:
+            print("failed to download map:", e)
     return filenames
 
 

@@ -14,6 +14,7 @@ class PlayDetails:
     top_play_of_player = None
     post_title = None
     comment_text = None
+    length = None
 
     _beatmap_re = re.compile(
         r"#### \[(.+?\[.+?\])\]\((https?://osu\.ppy\.sh/b/\d+[^\)\s]+)\)")
@@ -23,6 +24,8 @@ class PlayDetails:
         r"by \[(.*)\]\((https?://osu\.ppy\.sh/u/\d+)\s*\"\d+ ranked, \d+ qualified, \d+ loved, \d+ unranked\"\)")
     _player_re = re.compile(
         r"Top Play[\s\S\n]*?\[(.+?)\]\((https?://osu\.ppy\.sh/u/\d+)(?:\s*?\"Previously known as \'.+?\'\")?\)")
+    _length_re = re.compile(
+        r"\|(?:[^\|\n]+\|)+\s+(\d+:\d+)\s+\|(?:[^\|\n]+\|)+")
 
     def __init__(self, comment, title):
         self.post_title = title
@@ -35,6 +38,12 @@ class PlayDetails:
             self.mapper_name, self.mapper_link = match.group(1, 2)
         if match := re.search(self._player_re, comment):
             self.player_name, self.player_link = match.group(1, 2)
+        if matches := re.findall(self._length_re, comment):
+            try:
+                time_str = matches[-1].split(":")
+                self.length = 60 * int(time_str[0]) + int(time_str[1])
+            except:
+                print("Failed to parse map length")
 
     # def get_digits(self, prop_name: str):
     #     """
@@ -54,12 +63,15 @@ class PlayDetails:
     #         return prop_val[last_slash + 1:] if last_slash != -1 else ""
     #     return None
 
+
 def get_safe_name(string):
     return "".join([x if x.isalnum() else "_" for x in string])
+
 
 def get_digits(link):
     last_slash = link.rfind('/')
     return link[last_slash + 1:] if last_slash != -1 else None
+
 
 def get_osugame_plays(sort_type: str, num_posts: int):
     """
