@@ -1,0 +1,5 @@
+- make everything past reddit play fetching into a single pipeline per play
+    - rewrite download to download 1 at a time
+    - 
+- parallelize
+    - fork the upload script?

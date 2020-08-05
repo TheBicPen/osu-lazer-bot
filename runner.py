@@ -5,6 +5,7 @@ from fetch_plays import get_safe_name
 from time import time
 import upload_youtube
 from collections import namedtuple
+from os.path import splitext
 
 
 NUM_PLAYS_CHECKED = 8
@@ -13,6 +14,7 @@ DOWNLOAD_OPTION = "beatmaps replays"
 REPLAY_DOWNLOAD_SCRIPT = "node osu-replay-downloader/fetch.js"
 BEATMAP_LOAD_TIMEOUT = 10
 MAX_REPLAY_LENGTH = 900
+COMPRESSION_CRF = 5
 
 
 def main():
@@ -38,9 +40,11 @@ def main():
                     replay_file = play_obj["replay_file"]
                     print("launching recording script with", replay_file)
                     subprocess.run(
-                        ["sh", "launch.sh", str(play.play_length), output_file, replay_file])
+                        ["sh", "launch.sh", str(play.length + 15), output_file, replay_file])
+                    upscaled_filename = splitext(output_file)[0] + "_upscaled" + splitext(output_file)[1]
                     subprocess.run(
-                        ["sh", "upscale.sh", "0", output_file, output_file + "_upscaled"])
+                        ["sh", "upscale.sh", str(COMPRESSION_CRF), output_file, upscaled_filename])
+                    upload(upscaled_filename)
                 except KeyError:
                     print("failed to record replay: object",
                           play_obj, "has no replay file")
