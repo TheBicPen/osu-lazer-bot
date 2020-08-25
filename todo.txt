@@ -1,5 +1,7 @@
 - make everything past reddit play fetching into a single pipeline per play
-    - rewrite download to download 1 at a time
+    - rewrite download to download 1 at a time done
     - 
 - parallelize
     - fork the upload script?
+- check that the replay is correct
+    - use mods bitmask

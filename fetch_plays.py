@@ -1,6 +1,27 @@
 import praw
 import re
 
+# osu-bot constants taken from https://github.com/christopher-dG/osu-bot/blob/master/osubot/consts.py
+mods2int = {
+    # "": 1 >> 1,
+    "NF": 1 << 0,
+    "EZ": 1 << 1,
+    "TD": 1 << 2,
+    "HD": 1 << 3,
+    "HR": 1 << 4,
+    "SD": 1 << 5,
+    "DT": 1 << 6,
+    "RX": 1 << 7,
+    "HT": 1 << 8,
+    "NC": 1 << 6 | 1 << 9,  # DT is always set along with NC.
+    "FL": 1 << 10,
+    "AT": 1 << 11,
+    "SO": 1 << 12,
+    "AP": 1 << 13,
+    "PF": 1 << 5 | 1 << 14,  # SD is always set along with PF.
+    "V2": 1 << 29,
+    # TODO: Unranked Mania mods, maybe.
+}
 
 class PlayDetails:
     beatmap_name = None
@@ -15,6 +36,8 @@ class PlayDetails:
     post_title = None
     comment_text = None
     length = None
+    mods_bitmask = None
+    mods_string = None
 
     _beatmap_re = re.compile(
         r"#### \[(.+?\[.+?\])\]\((https?://osu\.ppy\.sh/b/\d+[^\)\s]+)\)")
@@ -26,6 +49,7 @@ class PlayDetails:
         r"Top Play[\s\S\n]*?\[(.+?)\]\((https?://osu\.ppy\.sh/u/\d+)(?:\s*?\"Previously known as \'.+?\'\")?\)")
     _length_re = re.compile(
         r"\|(?:[^\|\n]+\|)+\s+(\d+:\d+)\s+\|(?:[^\|\n]+\|)+")
+    _mods_re = re.compile(r"\|\s+\+(\w+)\s+\|(?:[^\|\n]+\|)+")
 
     def __init__(self, comment, title):
         self.post_title = title
@@ -44,24 +68,12 @@ class PlayDetails:
                 self.length = 60 * int(time_str[0]) + int(time_str[1])
             except:
                 print("Failed to parse map length")
-
-    # def get_digits(self, prop_name: str):
-    #     """
-    #     Return only the digits of a PlayDetails property by name.
-    #     """
-    #     prop_val = None
-    #     if prop_name == "beatmap_link":
-    #         prop_val = self.beatmap_link
-    #     elif prop_name == "beatmapset_download":
-    #         prop_val = self.beatmapset_download
-    #     elif prop_name == "mapper_link":
-    #         prop_val = self.mapper_link
-    #     elif prop_name == "player_link":
-    #         prop_val = self.player_link
-    #     if prop_val:
-    #         last_slash = prop_val.rfind('/')
-    #         return prop_val[last_slash + 1:] if last_slash != -1 else ""
-    #     return None
+        self.mods_bitmask = 0
+        if match := re.search(self._mods_re, comment):
+            self.mods_string = match.group(1)
+            for mod in mods2int:
+                if mod in self.mods_string:
+                    self.mods_bitmask += mods2int[mod]
 
 
 def get_safe_name(string):

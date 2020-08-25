@@ -2,7 +2,7 @@
 import beatmap_link
 import subprocess
 from fetch_plays import get_safe_name
-from time import time
+from time import time, sleep
 import upload_youtube
 from collections import namedtuple
 from os.path import splitext
@@ -38,18 +38,47 @@ def main():
                     output_file = recording_folder + get_safe_name(
                         f"{play.beatmap_name}_{play.player_name}_{int(time())}") + ".mkv"
                     replay_file = play_obj["replay_file"]
-                    print("launching recording script with", replay_file)
-                    subprocess.run(
-                        ["sh", "launch.sh", str(play.length + 15), output_file, replay_file])
-                    upscaled_filename = splitext(output_file)[0] + "_upscaled" + splitext(output_file)[1]
+                    # record_ffmpeg(play.length+15, output_file, replay_file)
+                    record_ssr(play.length+15, output_file, replay_file)
+                    upscaled_filename = splitext(output_file)[
+                        0] + "_upscaled" + splitext(output_file)[1]
                     subprocess.run(
                         ["sh", "upscale.sh", str(COMPRESSION_CRF), output_file, upscaled_filename])
-                    upload(upscaled_filename)
+                    # upload(upscaled_filename)
                 except KeyError:
                     print("failed to record replay: object",
                           play_obj, "has no replay file")
                 # except Exception as e:
                 #     print("failed to record replay:", e)
+
+
+def record_ffmpeg(play_length: int, output_file: str, replay_file: str):
+    print("launching ffmpeg recording script with", replay_file)
+    res = subprocess.run(["sh", "launch.sh", str(
+        play_length), output_file, replay_file])
+    return res.returncode
+
+
+def record_ssr(play_length: int, output_file: str, replay_file: str):
+    print("recording with ssr:")
+    # this will launch osu but fail to record since the startup takes time
+    proc = subprocess.Popen(["simplescreenrecorder", 
+                            # "--start-hidden",
+                             "--start-recording"
+                             ], stdin=subprocess.PIPE, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, bufsize=0)
+    try:
+        sleep(10)
+        proc.stdin.write(b"record-cancel\n")
+        sleep(10)
+        print("Starting recording")
+        proc.stdin.write(b"record-start\n")
+        sleep(play_length)
+        proc.stdin.write(b"record-save\n")
+        sleep(3)
+        proc.stdin.write(b"quit\n")
+        proc.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+        print("Process timed out")
 
 
 def check_play_obj(play_obj):
@@ -78,8 +107,10 @@ def check_play_obj(play_obj):
 def upload(file_name):
     youtube = upload_youtube.get_authenticated_service(args=None)
     # too lazy to make a class so I'm using a mock
-    Args = namedtuple('args', ["file", "keywords", "title", "description", "category", "privacyStatus"])
-    args = Args(file_name, "keyword", "test title", "description", "22", "private")
+    Args = namedtuple('args', ["file", "keywords", "title",
+                               "description", "category", "privacyStatus"])
+    args = Args(file_name, "keyword", "test title",
+                "description", "22", "private")
     upload_youtube.initialize_upload(youtube, args)
 
 
