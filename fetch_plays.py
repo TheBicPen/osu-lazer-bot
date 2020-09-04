@@ -46,7 +46,7 @@ class PlayDetails:
     _mapper_re = re.compile(
         r"by \[(.*)\]\((https?://osu\.ppy\.sh/u/\d+)\s*\"\d+ ranked, \d+ qualified, \d+ loved, \d+ unranked\"\)")
     _player_re = re.compile(
-        r"Top Play[\s\S\n]*?\[(.+?)\]\((https?://osu\.ppy\.sh/u/\d+)(?:\s*?\"Previously known as \'.+?\'\")?\)")
+        r"\[(.+?)\]\((https?://osu\.ppy\.sh/u/\d+)(?:\s*?\"Previously known as \'.+?\'\")?\)\s+\|\s+#\d+")
     _length_re = re.compile(
         r"\|(?:[^\|\n]+\|)+\s+(\d+:\d+)\s+\|(?:[^\|\n]+\|)+")
     _mods_re = re.compile(r"\|\s+\+(\w+)\s+\|(?:[^\|\n]+\|)+")
@@ -77,6 +77,8 @@ class PlayDetails:
 
 
 def get_safe_name(string):
+    if string is None:
+        return None
     return "".join([x if x.isalnum() else "_" for x in string])
 
 

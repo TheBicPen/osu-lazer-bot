@@ -3,13 +3,18 @@ import requests
 import subprocess
 import sys
 import io
+from typing import List
+from json import dumps
 
 
 class BeatmapDownloader:
+    """
+    Base class for Beatmap downloaders.
+    """
     _session: requests.Session = None
 
     def __init__(self):
-        _session = requests.Session()
+        self._session = requests.Session()
 
     def download_beatmapset(self, digits, filename):
         pass
@@ -117,39 +122,46 @@ class ReplayRecording:
         # gaming category as of 2020. I'm not spending API quota on this
         self.video_category = "22"
 
-    def download_beatmapset(self, filename: str, provider: self._beatmap_downloader):
+    def download_beatmapset(self, filename: str, provider=None):
+        if provider is None:
+            provider = self._beatmap_downloader
         self.beatmap_file = provider.download_beatmapset(
             fp.get_digits(self.play.beatmapset_download), filename)
 
 
-def main(download_option, download_script, max_plays_checked, reddit_sort_type, beatmap_provider=None):
+def download_plays(download_option: str, max_plays_checked: int, reddit_sort_type: str, download_script: str = "node osu-replay-downloader/fetch.js", beatmap_provider=None) -> List[ReplayRecording]:
     """
-    Fetch r/osugame plays with options max_plays_checked and reddit_sort_type.
+    Check max_plays_checked r/osugame posts sorted by reddit_sort_type for plays.
     Download beatmaps and/or replays based on the string in download_option using the script download_replays.
-    Beatmaps are downloaded from beatmap_provider
+    Beatmaps are downloaded using beatmap_provider
     """
-
-    if beatmap_provider == "official":
-        downloader = OfficialProvider()
-    elif beatmap_provider == "bloodcat":
-        downloader = BloodcatProvider()
-    else:
-        downloader = OfficialProvider()
-        if not downloader:
-            print("Falling back to bloodcat")
-            downloader = BloodcatProvider()
 
     plays = fp.get_osugame_plays(reddit_sort_type, max_plays_checked)
     replay_infos = [ReplayRecording(play) for play in plays]
     print()
     if "beatmaps" in download_option:
         print("Downloading beatmaps")
+        if beatmap_provider == "official":
+            downloader = OfficialProvider()
+        elif beatmap_provider == "bloodcat":
+            downloader = BloodcatProvider()
+        else:
+            print("Trying to use official beatmap host")
+            downloader = OfficialProvider()
+            if not downloader:
+                print("Falling back to bloodcat beatmap host")
+                downloader = BloodcatProvider()
         for replay_info in replay_infos:
             try:
+                safe_beatmap_name = fp.get_safe_name(
+                    replay_info.play.beatmap_name)
                 replay_info.download_beatmapset(
-                    f"downloads/{replay_info.play.beatmap_name}.osz", downloader)
+                    f"downloads/{safe_beatmap_name}.osz", downloader)
             except:
                 print("Failed to download beatmap")
+                if replay_info.play is not None:
+                    print(
+                        f"Beatmap name: {replay_info.play.beatmap_name}, post title: '{replay_info.play.post_title}'")
     else:
         print("Skipping beatmap download")
 
@@ -169,17 +181,35 @@ def main(download_option, download_script, max_plays_checked, reddit_sort_type, 
                 play = replay_info.play
                 safe_player_name = fp.get_safe_name(play.player_name)
                 output_file = f'downloads/mapset-{fp.get_digits(play.beatmapset_download)}_user-id-{safe_player_name}.osr'
-                helper_script.extend(['--api-key', token, '--beatmap-id', fp.get_digits(play.beatmap_link), '--user-id',
-                                      fp.get_digits(play.player_link), '--mods', play.mods_bitmask, '--output-file', output_file])
-                # print(f'Launching script {helper_script} to download replays')
-                replay_info["replay_file"] = output_file
-                try:
-                    subprocess.run(helper_script).check_returncode()
-                except subprocess.CalledProcessError as e:
-                    print("Replay download script returned error", e)
-            except Exception as e:
-                print("An error occurred while processing post",
-                      replay_info.play.post_title, e)
+                helper_script.extend([
+                    '--api-key', token,
+                    '--beatmap-id', str(fp.get_digits(play.beatmap_link)),
+                    '--user-id', str(fp.get_digits(play.player_link)),
+                    '--mods', str(play.mods_bitmask),
+                    '--output-file', output_file
+                ])
+                subprocess.run(helper_script).check_returncode()
+                replay_info.replay_file = output_file
+            except subprocess.CalledProcessError as e:
+                if play is None:
+                    print("There is no play object attached (!?)")
+                else:
+                    print(f"Failed to download replay of {play.player_name} - {play.beatmap_name}\n",
+                          # e
+                          )
+            except AttributeError as e:
+                if play is None:
+                    print("There is no play object attached to replay info", replay_info.__dict__)
+                else:
+                    print(f"Play '{play.post_title}' is missing required information:",
+                          f"\nPlayer name:{play.player_name}, link:{play.player_link}",
+                          f"\nBeatmap name:{play.beatmap_name}, link:{play.beatmap_link}, mapset link:{play.beatmapset_download}",
+                          f"\nMods:{play.mods_string}, bitmask:{play.mods_bitmask}",
+                          f"\nLength:{play.length}",
+                          "\n")
+            # except Exception as e:
+            #     print("An error occurred while processing post",
+            #           replay_info.play.post_title, e)
     else:
         print("Skipping replay download")
     return replay_infos
@@ -187,4 +217,6 @@ def main(download_option, download_script, max_plays_checked, reddit_sort_type, 
 
 if __name__ == "__main__":
     print(sys.argv)
-    main(*sys.argv[1:])  # hope that all the args are provided
+    # hope that all the args are provided
+    replay_recordings = download_plays(*sys.argv[1:])
+    print(dumps(replay_recordings))
