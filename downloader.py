@@ -4,7 +4,7 @@ import subprocess
 import sys
 import io
 from typing import List
-from json import dumps
+import json
 
 
 class BeatmapDownloader:
@@ -117,7 +117,7 @@ class ReplayRecording:
         
         """
 
-        self._video_tags = ["osu", "osu!", "pp", "lazer", self.play.player_name,
+        self.video_tags = ["osu", "osu!", "pp", "lazer", self.play.player_name,
                             self.play.beatmap_name, self.play.mapper_name, self.play.top_on_map].join(",")[:500]
         # gaming category as of 2020. I'm not spending API quota on this
         self.video_category = "22"
@@ -180,7 +180,9 @@ def download_plays(download_option: str, max_plays_checked: int, reddit_sort_typ
                 helper_script = download_script.split()
                 play = replay_info.play
                 safe_player_name = fp.get_safe_name(play.player_name)
-                output_file = f'downloads/mapset-{fp.get_digits(play.beatmapset_download)}_user-id-{safe_player_name}.osr'
+                safe_beatmap_name = fp.get_safe_name(
+                    replay_info.play.beatmap_name)
+                output_file = f'downloads/{safe_beatmap_name}_{safe_player_name}.osr'
                 helper_script.extend([
                     '--api-key', token,
                     '--beatmap-id', str(fp.get_digits(play.beatmap_link)),
@@ -199,7 +201,8 @@ def download_plays(download_option: str, max_plays_checked: int, reddit_sort_typ
                           )
             except AttributeError as e:
                 if play is None:
-                    print("There is no play object attached to replay info", replay_info.__dict__)
+                    print("There is no play object attached to replay info",
+                          replay_info.__dict__)
                 else:
                     print(f"Play '{play.post_title}' is missing required information:",
                           f"\nPlayer name:{play.player_name}, link:{play.player_link}",
@@ -216,7 +219,11 @@ def download_plays(download_option: str, max_plays_checked: int, reddit_sort_typ
 
 
 if __name__ == "__main__":
-    print(sys.argv)
-    # hope that all the args are provided
-    replay_recordings = download_plays(*sys.argv[1:])
-    print(dumps(replay_recordings))
+    if len(sys.argv) > 1:
+        print(sys.argv)
+        replay_recordings = download_plays(*sys.argv[1:])
+    else:
+        replay_recordings = download_plays("beatmaps replays", 8, "hot")
+    # print(json.dumps(replay_recordings))
+    # with open("plays.json", "w+") as outfile:
+    #     json.dump(replay_recordings, outfile)

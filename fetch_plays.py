@@ -44,19 +44,19 @@ class PlayDetails:
     _beatmapset_download_re = re.compile(
         r"\[\(&#x2b07;\)\]\((https?://osu\.ppy\.sh/d/\d+)\s*\"Download this beatmap\"\)")
     _mapper_re = re.compile(
-        r"by \[(.*)\]\((https?://osu\.ppy\.sh/u/\d+)\s*\"\d+ ranked, \d+ qualified, \d+ loved, \d+ unranked\"\)")
+        r"by \[(.*)\]\((https?://osu\.ppy\.sh/u/\d+)( \"(\d+) ranked, (\d+) qualified, (\d+) loved, (\d+) unranked\")?\)")
     _player_re = re.compile(
         r"\[(.+?)\]\((https?://osu\.ppy\.sh/u/\d+)(?:\s*?\"Previously known as \'.+?\'\")?\)\s+\|\s+#\d+")
     _length_re = re.compile(
         r"\|(?:[^\|\n]+\|)+\s+(\d+:\d+)\s+\|(?:[^\|\n]+\|)+")
     _mods_re = re.compile(r"\|\s+\+(\w+)\s+\|(?:[^\|\n]+\|)+")
 
-    def __init__(self, comment, title):
+    def __init__(self, comment: str, title: str):
         self.post_title = title
         self.comment_text = comment
         if match := re.search(self._beatmapset_download_re, comment):
             self.beatmapset_download = match.group(1)
-        if match := re.match(self._beatmap_re, comment):
+        if match := re.search(self._beatmap_re, comment):
             self.beatmap_name, self.beatmap_link = match.group(1, 2)
         if match := re.search(self._mapper_re, comment):
             self.mapper_name, self.mapper_link = match.group(1, 2)
@@ -68,12 +68,13 @@ class PlayDetails:
                 self.length = 60 * int(time_str[0]) + int(time_str[1])
             except:
                 print("Failed to parse map length")
-        self.mods_bitmask = 0
-        if match := re.search(self._mods_re, comment):
-            self.mods_string = match.group(1)
-            for mod in mods2int:
-                if mod in self.mods_string:
-                    self.mods_bitmask += mods2int[mod]
+        if self.beatmap_name:
+            self.mods_bitmask = 0
+            if match := re.search(self._mods_re, comment):
+                self.mods_string = match.group(1)
+                for mod in mods2int:
+                    if mod in self.mods_string:
+                        self.mods_bitmask += mods2int[mod]
 
 
 def get_safe_name(string):
