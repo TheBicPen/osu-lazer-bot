@@ -122,6 +122,37 @@ class TestFP(unittest.TestCase):
         self.assertEqual(play.beatmap_link, "https://osu.ppy.sh/b/126645?m=2")
         self.assertEqual(play.beatmapset_download, "https://osu.ppy.sh/d/39804")
 
+    def test_loved_post(self):
+        # post is loved. mapper renamed. TD mod in #1. player renamed.
+        post = """#### [DatManOvaDer - Busta Rhymes Goes To The Wii Shop Channel [oof]](https://osu.ppy.sh/b/1681634?m=0) [(&#x2b07;)](https://osu.ppy.sh/d/801074 "Download this beatmap") by [Fowwo](https://osu.ppy.sh/u/4547551 "Renamed to 'fowwo': 0 ranked, 0 qualified, 1 loved, 55 unranked") || osu!standard
+**#1: [goink](https://osu.ppy.sh/u/1920049 "8,531pp - rank #3,074 (#521 US) - 87.03% accuracy - 74,988 playcount") (+TD - 88.72%) || 504x max combo || Loved (2019) || 397,431 plays**
+
+| CS | AR | OD | HP | SR   | BPM | Length | pp (95% &#124; 96.18% &#124; 98% &#124; 99% &#124; 100%) |
+:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:
+| 4  | 10 | 10 | 6  | 8.37 | 150 | 00:59  | 589 &#124; 605 &#124; 645 &#124; 670 &#124; 708          |
+
+| Player                                                                        | Rank                  | pp     | Accuracy | Playstyle | Playcount | Top Play                                                                                                                                                                                                            |
+:-:|:-:|:-:|:-:|:-:|:-:|:-:
+| [badeu](https://osu.ppy.sh/u/1473890 "Previously known as 'badeatudorpetre'") | #17&nbsp;(#1&nbsp;RO) | 16,254 | 97.48%   | TB+KB     | 102,140   | [Turbo&nbsp;&#x2011;&nbsp;PADORU&nbsp;/&nbsp;PADORU&nbsp;[Gift]](https://osu.ppy.sh/b/2245774?m=0 "SR9.37 - CS5.2 - AR11 - OD11.1 - HP8.7 - 285BPM - 00:21") +HDDTHR&nbsp;&#124;&nbsp;98.19%&nbsp;&#124;&nbsp;989pp |
+
+***
+
+^(play more – )[^Source](https://github.com/christopher-dG/osu-bot)^( | )[^Developer](https://reddit.com/u/PM_ME_DOG_PICS_PLS) [&nbsp;](http://x "Beatmap: Found in events
+.osu: Downloaded from S3")
+            """
+        play = fp.PlayDetails(post, "title")
+        self.assertEqual(play.length, 59)
+        self.assertEqual(play.player_name, "badeu")
+        self.assertEqual(play.player_link, "https://osu.ppy.sh/u/1473890")
+        self.assertEqual(play.mapper_name, "Fowwo")
+        self.assertEqual(play.mapper_link, "https://osu.ppy.sh/u/4547551")
+        self.assertEqual(play.beatmap_link, "https://osu.ppy.sh/b/1681634?m=0")
+        self.assertEqual(play.beatmapset_download, "https://osu.ppy.sh/d/801074")
+
+        
+
+
+
 
 if __name__ == '__main__':
     unittest.main()

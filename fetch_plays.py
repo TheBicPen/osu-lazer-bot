@@ -44,7 +44,7 @@ class PlayDetails:
     _beatmapset_download_re = re.compile(
         r"\[\(&#x2b07;\)\]\((https?://osu\.ppy\.sh/d/\d+)\s*\"Download this beatmap\"\)")
     _mapper_re = re.compile(
-        r"by \[(.*)\]\((https?://osu\.ppy\.sh/u/\d+)( \"(\d+) ranked, (\d+) qualified, (\d+) loved, (\d+) unranked\")?\)")
+        r"by \[(.*)\]\((https?://osu\.ppy\.sh/u/\d+)( \"[^\"]+\")?\)")
     _player_re = re.compile(
         r"\[(.+?)\]\((https?://osu\.ppy\.sh/u/\d+)(?:\s*?\"Previously known as \'.+?\'\")?\)\s+\|\s+#\d+")
     _length_re = re.compile(

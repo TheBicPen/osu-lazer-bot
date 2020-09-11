@@ -4,7 +4,6 @@ import subprocess
 import sys
 import io
 from typing import List
-import json
 
 
 class BeatmapDownloader:
@@ -103,7 +102,7 @@ class ReplayRecording:
 
     def generate_video_attributes(self):
         # self._video_title = f"{self._play.player_name} | {self._play.beatmap_name}"
-        self.video_title = self.play.post_title[:200]
+        self.video_title = self.play.post_title[:100]
 
         self.video_description = f"""{self.play.post_title}
 
@@ -116,9 +115,9 @@ class ReplayRecording:
         Check out this project on GitHub: https://github.com/TheBicPen/osu-lazer-bot
         
         """
-
-        self.video_tags = ["osu", "osu!", "pp", "lazer", self.play.player_name,
-                            self.play.beatmap_name, self.play.mapper_name, self.play.top_on_map].join(",")[:500]
+        tags = ["osu", "osu!", "pp", "lazer", self.play.player_name,
+                self.play.beatmap_name, self.play.mapper_name, self.play.top_on_map]
+        self.video_tags = ','.join([str(tag) for tag in tags])[:500]
         # gaming category as of 2020. I'm not spending API quota on this
         self.video_category = "22"
 
@@ -142,21 +141,21 @@ def download_plays(download_option: str, max_plays_checked: int, reddit_sort_typ
     if "beatmaps" in download_option:
         print("Downloading beatmaps")
         if beatmap_provider == "official":
-            downloader = OfficialProvider()
+            provider = OfficialProvider()
         elif beatmap_provider == "bloodcat":
-            downloader = BloodcatProvider()
+            provider = BloodcatProvider()
         else:
             print("Trying to use official beatmap host")
-            downloader = OfficialProvider()
-            if not downloader:
+            provider = OfficialProvider()
+            if not provider:
                 print("Falling back to bloodcat beatmap host")
-                downloader = BloodcatProvider()
+                provider = BloodcatProvider()
         for replay_info in replay_infos:
             try:
                 safe_beatmap_name = fp.get_safe_name(
                     replay_info.play.beatmap_name)
                 replay_info.download_beatmapset(
-                    f"downloads/{safe_beatmap_name}.osz", downloader)
+                    f"downloads/{safe_beatmap_name}.osz", provider)
             except:
                 print("Failed to download beatmap")
                 if replay_info.play is not None:
@@ -224,6 +223,3 @@ if __name__ == "__main__":
         replay_recordings = download_plays(*sys.argv[1:])
     else:
         replay_recordings = download_plays("beatmaps replays", 8, "hot")
-    # print(json.dumps(replay_recordings))
-    # with open("plays.json", "w+") as outfile:
-    #     json.dump(replay_recordings, outfile)

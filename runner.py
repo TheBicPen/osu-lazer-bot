@@ -1,5 +1,5 @@
 
-import downloader
+import download
 import subprocess
 from fetch_plays import get_safe_name
 from time import time, sleep
@@ -17,14 +17,16 @@ MAX_REPLAY_LENGTH = 900
 COMPRESSION_CRF = 5
 
 
-def main(download: str = DOWNLOAD_OPTION, num_plays: int = NUM_POSTS_CHECKED, sort_type: str = SORT_TYPE):
-    replay_recordings = downloader.download_plays(
-        download, num_plays, sort_type)
+def main(num_plays: int, sort_type: str, replay_infos: List[download.ReplayRecording] = None):
 
-    num_imported_maps = import_maps(replay_recordings)
+    if replay_infos is None:
+        replay_infos = download.download_plays(
+            DOWNLOAD_OPTION, num_plays, sort_type)
+
+    num_imported_maps = import_maps(replay_infos)
     print(f"Imported {num_imported_maps} maps")
 
-    for replay_info in replay_recordings:
+    for replay_info in replay_infos:
         if replay_info.replay_file and replay_info.play.length:
             record(replay_info)
             print("Upscaling file")
@@ -44,7 +46,7 @@ def record_ffmpeg(play_length: int, output_file: str, replay_file: str):
     return res.returncode
 
 
-def import_maps(plays: List[downloader.ReplayRecording], timeout: int = BEATMAP_LOAD_TIMEOUT) -> int:
+def import_maps(plays: List[download.ReplayRecording], timeout: int = BEATMAP_LOAD_TIMEOUT) -> int:
     """
     Import beatmaps in plays. Wait 'timeout' seconds after launch before killing osu! process.
     Return number of beatmaps imported.
@@ -99,7 +101,7 @@ def record_ssr(play_length: int, output_file: str, replay_file: str):
         subprocess.run(["pkill", "osu\!"])
 
 
-def record(replay_info: downloader.ReplayRecording, recording_folder: str = None):
+def record(replay_info: download.ReplayRecording, recording_folder: str = None):
     if recording_folder is None:
         with open("creds/recording_folder.txt", "r") as f:
             recording_folder = f.read()
@@ -111,7 +113,7 @@ def record(replay_info: downloader.ReplayRecording, recording_folder: str = None
     return output_file
 
 
-def upscale(play: downloader.ReplayRecording, infile: str = None, outfile: str = None, compression: int = COMPRESSION_CRF):
+def upscale(play: download.ReplayRecording, infile: str = None, outfile: str = None, compression: int = COMPRESSION_CRF):
     if infile is None:
         infile = play.video_file
     if outfile is None:
@@ -123,7 +125,7 @@ def upscale(play: downloader.ReplayRecording, infile: str = None, outfile: str =
     return outfile
 
 
-def upload(play: downloader.ReplayRecording):
+def upload(play: download.ReplayRecording):
     youtube = upload_youtube.get_authenticated_service(args=None)
     play.generate_video_attributes()
     # too lazy to make a class so I'm using a mock
@@ -131,6 +133,7 @@ def upload(play: downloader.ReplayRecording):
                                "description", "category", "privacyStatus"])
     args = Args(play.video_file, play.video_tags, play.video_title,
                 play.video_description, play.video_category, "private")
+    print("Uploading video: ", args)
     upload_youtube.initialize_upload(youtube, args)
 
 

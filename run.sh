@@ -43,7 +43,7 @@ num_check=$(echo "$num_check" | tr -d -)
 cd "$(dirname $0)"
 . "./env/bin/activate"
 
-python downloader.py "$download" "$helper" "$num_check" "$sort" || exit 1
+python download.py "$download" "$helper" "$num_check" "$sort" || exit 1
 files=""
 for file in $(
      find $(pwd)/downloads/ -type f -iname '*.osz'
