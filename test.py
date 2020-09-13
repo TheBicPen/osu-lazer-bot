@@ -152,6 +152,80 @@ class TestFP(unittest.TestCase):
         
 
 
+class TestCommentGetting(unittest.TestCase):
+    def setUp(self):
+        self.reddit = fp.initialize()
+        self.maxDiff = None
+
+    def test_score_post(self):
+        id = "caue08"
+        post = self.reddit.submission(id=id)
+        self.assertEqual(
+            post.title, "Vaxei | Wakeshima Kanon - Tsukinami [Nostalgia] + HDDT (mapset by Reform, 8.8*) 99.42% FC #1 | 1023pp | 63.64 cv. UR | 1st DT FC, 1st STD 1k pp play!!!")
+        self.assertEqual(fp.check_score_post(post, "osu-bot").id, "etb5ktb")
+        self.assertTrue(fp.check_score_post(post, "osu-bot"))
+
+    def test_not_score_post(self):
+        id = "5p2w25"
+        post = self.reddit.submission(id=id)
+        self.assertEqual(
+            post.title, "The official portrait of our leader should be the #1 most upvoted post in Reddit history")
+        self.assertFalse(fp.check_score_post(post, "osu-bot"))
+        self.assertIsNone(fp.check_score_post(post, "osu-bot"))
+
+    def test_get_top_alltime(self):
+        # assume that vaxei 1k is in top 5 of all time
+        posts_to_comments = fp.get_subreddit_links(
+            self.reddit, "osugame", "all", 5, "osu-bot", False)
+        title = "Vaxei | Wakeshima Kanon - Tsukinami [Nostalgia] + HDDT (mapset by Reform, 8.8*) 99.42% FC #1 | 1023pp | 63.64 cv. UR | 1st DT FC, 1st STD 1k pp play!!!"
+        comment = """#### [Wakeshima Kanon - Tsukinami [Nostalgia]](https://osu.ppy.sh/b/1872396?m=0) [(&#x2b07;)](https://osu.ppy.sh/d/896080 "Download this beatmap") by [Reform](https://osu.ppy.sh/u/3723568 "8 ranked, 0 qualified, 0 loved, 62 unranked") || osu!standard
+**#2: [[ Hyung ]](https://osu.ppy.sh/u/7406009 "10,575pp - rank #364 (#30 KR) - 99.41% accuracy - 70,470 playcount") (+HDHR - 99.95% - 504pp) || 1,682x max combo || Ranked (2019) || 93,663 plays**
+
+|       | CS  | AR   | OD   | HP  | SR   | BPM | Length | pp (95% &#124; 98% &#124; 99% &#124; 99.42% &#124; 100%) |
+:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:
+| NoMod | 3.8 | 9.2  | 9.2  | 5.5 | 6.15 | 180 | 04:44  | 257 &#124; 301 &#124; 329 &#124; 344 &#124; 370          |
+| +HDDT | 3.8 | 10.5 | 10.7 | 5.5 | 8.79 | 270 | 03:09  | 842 &#124; 931 &#124; 988 &#124; 1,019 &#124; 1,069      |
+
+| Player                                                                    | Rank                 | pp     | Accuracy | Playstyle | Playcount | Top Play                                                                                                                                                      |
+:-:|:-:|:-:|:-:|:-:|:-:|:-:
+| [Vaxei](https://osu.ppy.sh/u/4787150 "Previously known as 'Donkey Kong'") | #2&nbsp;(#2&nbsp;US) | 15,848 | 98.73%   | TB+KB     | 135,637   | [Wakeshima&nbsp;Kanon&nbsp;&#x2011;&nbsp;Tsukinami&nbsp;[Nostalgia]](https://osu.ppy.sh/b/1872396?m=0) +HDDT&nbsp;&#124;&nbsp;99.42%&nbsp;&#124;&nbsp;1,023pp |
+
+YouTube links: [[1]](https://youtu.be/FBFYRwmNvCE "'Vaxei | Wakeshima Kanon - Tsukinami [Nostalgia] HDDT #1 Global 1023PP' by 'Epic Replays'") [[2]](https://youtu.be/TqV13oVlMcE "'Vaxei丨1023pp 99.42%FC#1丨分岛花音 - ツキナミ [Nostalgia] +HDDT' by 'Alan Meng'") [[3]](https://youtu.be/7AYkfX2KZfs "'Vaxei Getting The FIRST 1000pp PLAY + #1 Global in osu! Standard | osu! Highlight' by 'to the beat!'") [[4]](https://youtu.be/kxu2IGadeBc "'osu! | Vaxei - Tsukinami + HDDT FC!!! 1KPP!! LIVE SPECTATE + CHAT REACTION!!!' by 'tkz4_on_osu'") [[5]](https://youtu.be/gWEiMwIlBG4 "'VAXEI SET 1ST 1KPP PLAY AND REACH #1 GLOBAL' by 'CPOL'") [[6]](https://youtu.be/G-sbNQTSqpY "'Vaxei | Wakeshima Kanon - Tsukinami [Nostalgia] + HDDT FC #1 | 1023pp | 1st 1000pp play in std!!' by 'osu! Lazer Replays'") [[7]](https://youtu.be/V8wMeFktfTw "'Sean & Bobo & Blackstripe - Holy Bacon' by 'Inverse Network'") [[8]](https://youtu.be/zyXBQiepq4M "'osu! | Vaxei | Wakeshima Kanon - Tsukinami [Nostalgia] +HD,DT 99.42% FC 1,023pp | FIRST 1K PP SCORE!' by 'Circle People'")
+
+***
+
+^(these movements are from an algorithm designed in java – )[^Source](https://github.com/christopher-dG/osu-bot)^( | )[^Developer](https://reddit.com/u/PM_ME_DOG_PICS_PLS) [&nbsp;](http://x "Beatmap: Found in events")"""
+        self.assertEqual(posts_to_comments[title], comment)
+
+    def test_get_top_alltime_high_level(self):
+        # assume that vaxei 1k is in top 5 of all time
+        # use higher-level function this time
+        plays = fp.get_osugame_plays("all", 5)
+        title = "Vaxei | Wakeshima Kanon - Tsukinami [Nostalgia] + HDDT (mapset by Reform, 8.8*) 99.42% FC #1 | 1023pp | 63.64 cv. UR | 1st DT FC, 1st STD 1k pp play!!!"
+        comment = """#### [Wakeshima Kanon - Tsukinami [Nostalgia]](https://osu.ppy.sh/b/1872396?m=0) [(&#x2b07;)](https://osu.ppy.sh/d/896080 "Download this beatmap") by [Reform](https://osu.ppy.sh/u/3723568 "8 ranked, 0 qualified, 0 loved, 62 unranked") || osu!standard
+**#2: [[ Hyung ]](https://osu.ppy.sh/u/7406009 "10,575pp - rank #364 (#30 KR) - 99.41% accuracy - 70,470 playcount") (+HDHR - 99.95% - 504pp) || 1,682x max combo || Ranked (2019) || 93,663 plays**
+
+|       | CS  | AR   | OD   | HP  | SR   | BPM | Length | pp (95% &#124; 98% &#124; 99% &#124; 99.42% &#124; 100%) |
+:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:
+| NoMod | 3.8 | 9.2  | 9.2  | 5.5 | 6.15 | 180 | 04:44  | 257 &#124; 301 &#124; 329 &#124; 344 &#124; 370          |
+| +HDDT | 3.8 | 10.5 | 10.7 | 5.5 | 8.79 | 270 | 03:09  | 842 &#124; 931 &#124; 988 &#124; 1,019 &#124; 1,069      |
+
+| Player                                                                    | Rank                 | pp     | Accuracy | Playstyle | Playcount | Top Play                                                                                                                                                      |
+:-:|:-:|:-:|:-:|:-:|:-:|:-:
+| [Vaxei](https://osu.ppy.sh/u/4787150 "Previously known as 'Donkey Kong'") | #2&nbsp;(#2&nbsp;US) | 15,848 | 98.73%   | TB+KB     | 135,637   | [Wakeshima&nbsp;Kanon&nbsp;&#x2011;&nbsp;Tsukinami&nbsp;[Nostalgia]](https://osu.ppy.sh/b/1872396?m=0) +HDDT&nbsp;&#124;&nbsp;99.42%&nbsp;&#124;&nbsp;1,023pp |
+
+YouTube links: [[1]](https://youtu.be/FBFYRwmNvCE "'Vaxei | Wakeshima Kanon - Tsukinami [Nostalgia] HDDT #1 Global 1023PP' by 'Epic Replays'") [[2]](https://youtu.be/TqV13oVlMcE "'Vaxei丨1023pp 99.42%FC#1丨分岛花音 - ツキナミ [Nostalgia] +HDDT' by 'Alan Meng'") [[3]](https://youtu.be/7AYkfX2KZfs "'Vaxei Getting The FIRST 1000pp PLAY + #1 Global in osu! Standard | osu! Highlight' by 'to the beat!'") [[4]](https://youtu.be/kxu2IGadeBc "'osu! | Vaxei - Tsukinami + HDDT FC!!! 1KPP!! LIVE SPECTATE + CHAT REACTION!!!' by 'tkz4_on_osu'") [[5]](https://youtu.be/gWEiMwIlBG4 "'VAXEI SET 1ST 1KPP PLAY AND REACH #1 GLOBAL' by 'CPOL'") [[6]](https://youtu.be/G-sbNQTSqpY "'Vaxei | Wakeshima Kanon - Tsukinami [Nostalgia] + HDDT FC #1 | 1023pp | 1st 1000pp play in std!!' by 'osu! Lazer Replays'") [[7]](https://youtu.be/V8wMeFktfTw "'Sean & Bobo & Blackstripe - Holy Bacon' by 'Inverse Network'") [[8]](https://youtu.be/zyXBQiepq4M "'osu! | Vaxei | Wakeshima Kanon - Tsukinami [Nostalgia] +HD,DT 99.42% FC 1,023pp | FIRST 1K PP SCORE!' by 'Circle People'")
+
+***
+
+^(these movements are from an algorithm designed in java – )[^Source](https://github.com/christopher-dG/osu-bot)^( | )[^Developer](https://reddit.com/u/PM_ME_DOG_PICS_PLS) [&nbsp;](http://x "Beatmap: Found in events")"""
+        expected_play=None
+        for play in plays:
+            if play.post_title == title:
+                expected_play = play
+        self.assertIsNotNone(expected_play)
+        self.assertEqual(expected_play.post_title, title)
+        self.assertEqual(expected_play.comment_text, comment)
 
 
 if __name__ == '__main__':

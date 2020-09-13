@@ -23,6 +23,7 @@ mods2int = {
     # TODO: Unranked Mania mods, maybe.
 }
 
+
 class PlayDetails:
     beatmap_name = None
     beatmap_link = None
@@ -101,48 +102,59 @@ def get_osugame_plays(sort_type: str, num_posts: int):
         try:
             plays.append(PlayDetails(comment_body, title))
         except Exception as e:
-            print(f"Error parsing post '{title}':\n{e}")
-            pass
+            print(f"Error getting play details from post '{title}':\n{e}")
     return plays
 
 
-def get_subreddit_links(reddit: praw.Reddit, subreddit: str, sort_type: str, num_posts: int, author: str):
+def get_subreddit_links(reddit: praw.Reddit, subreddit: str, sort_type: str, num_posts: int, author: str, use_skiplist=False):
     """
     Uses the Reddit instance to retrieve the first num_posts from subreddit, sorted by sort_type.
-    Then searches for comments on these posts made by author (should be a bot that posts on all posts),
-    and finally returns a list of lists of markdown-formatted links on that post by the given author.
-    Only the first comment by author on each post is considered. 
-
+    Then searches for top-level comments on these posts made by author (should be a bot that posts on all posts).
     Only the first set of comments is loaded, so the comment by author should be pinned or highly upvoted.
-    See praw api docs for list of valid sort types - https://praw.readthedocs.io/en/latest/code_overview/models/subreddit.html 
+    Only the first comment by author on each post is considered.
     """
     subreddit = reddit.subreddit(subreddit)
     num_posts = int(num_posts)
     post_to_comment_by_author = {}
     if sort_type == 'hot':
-        submissions = subreddit.hot(limit=num_posts)
+        posts = subreddit.hot(limit=num_posts)
     elif sort_type in ['hour', 'day', 'week', 'month', 'year', 'all']:
-        submissions = subreddit.top(sort_type, limit=num_posts)
+        posts = subreddit.top(sort_type, limit=num_posts)
     else:
         return
-    for submission in submissions:
-        submission.comments.replace_more(0)  # we want top level comments only
-        comments = submission.comments.list()
+    if use_skiplist:
+        with open("creds/skip_posts.txt", "r+") as f:
+            skip_list = [line.strip() for line in f.readlines()]
+    for post in posts:
+        if use_skiplist and post.id in skip_list:
+            print(f"Skipping post '{post.title}'")
+            continue
         try:
-            for comment in comments:
-                if isinstance(comment, praw.models.MoreComments):
-                    print(
-                        f"No top comments by {author} in post '{submission.title}'")
-                elif comment.author == author:
-                    post_to_comment_by_author[submission.title] = comment.body
-                    print(f"Score post: '{submission.title}'")
-                    break
-            if submission.title not in post_to_comment_by_author.keys():
-                print(f"Not a score post: '{submission.title}'")
+            if comment := check_score_post(post, author):
+                print(f"Score post: '{post.title}'")
+                post_to_comment_by_author[post.title] = comment.body
+            else:
+                print(f"Not a score post: '{post.title}'")
+
         except Exception as e:
-            print("Error while parsing comments", submission.title)
+            print("Error while parsing comments", post.title)
             print(e)
     return post_to_comment_by_author
+
+
+def check_score_post(post: praw.Reddit.submission, author: str):
+    """
+    Return top-level comment by author or None if none is found.
+    """
+    comments = post.comments.list()
+    for comment in comments:
+        if isinstance(comment, praw.models.MoreComments):
+            # print(f"No top-level comments by {author} in post '{post.title}'")
+            pass
+        elif comment.author == author:
+            return comment
+    else:
+        return None
 
 
 def initialize():
@@ -155,15 +167,15 @@ def initialize():
             token = token_file.readlines()
         token[0] = token[0].strip()
     except:
-        print("unable to read Reddit API token")
+        print("Unable to read Reddit API token")
         return
     try:
         reddit = praw.Reddit(client_id=token[0],
                              client_secret=token[1],
-                             user_agent='my user agent')
+                             user_agent='lazerbot post parser - https://github.com/TheBicPen/osu-lazer-bot')
         return reddit
     except:
-        print("unable to initialize Reddit instance")
+        print("Unable to initialize Reddit instance")
 
 
 if __name__ == "__main__":
