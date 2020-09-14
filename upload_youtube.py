@@ -125,7 +125,7 @@ def initialize_upload(youtube, options):
     media_body=MediaFileUpload(options.file, chunksize=-1, resumable=True)
   )
 
-  resumable_upload(insert_request)
+  return resumable_upload(insert_request)
 
 # This method implements an exponential backoff strategy to resume a
 # failed upload.
@@ -142,6 +142,7 @@ def resumable_upload(insert_request):
       if response is not None:
         if 'id' in response:
           print(("Video id '%s' was successfully uploaded." % response['id']))
+          return response['id']
         else:
           exit("The upload failed with an unexpected response: %s" % response)
     except HttpError as e:

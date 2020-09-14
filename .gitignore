@@ -2,6 +2,7 @@ creds/*
 .vscode
 downloads/*
 osu-replay-downloader
+temp.txt
 
 
 # Byte-compiled / optimized / DLL files

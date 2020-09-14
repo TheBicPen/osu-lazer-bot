@@ -78,16 +78,6 @@ def manual():
                 factor = int(input("Select compression ratio [0-25]"))
                 upscale(recording, compression=factor)
                 upload(recording)
-                #                 if input("Import beatmaps? [y/n]: ") == "y":
-                #     num_imported_maps = import_maps([recording])
-                #     print(f"Imported {num_imported_maps} maps")
-                # if input("Record? [y/n]: ") == "y":
-                #     record(recording)
-                # if input("Upscale? [y/n]: ") == "y":
-                #     factor = int(input("Select compression ratio [0-25]"))
-                #     upscale(recording, compression=factor)
-                # if input("Upload? [y/n]: ") == "y":
-                #     upload(recording)
         except KeyboardInterrupt as e:
             print()
         finally:
@@ -110,6 +100,9 @@ def import_maps(plays: List[download.ReplayRecording], timeout: int = BEATMAP_LO
     with open("creds/osu_path.txt", "r") as f:
         osu_command = f.read().strip()
     maps = [play.beatmap_file for play in plays if play.beatmap_file]
+    if len(maps) == 0:
+        print("No maps to import!")
+        return
     try:
         print("Importing beatmaps")
         subprocess.run([osu_command, *maps], timeout=timeout)
@@ -190,7 +183,7 @@ def upload(play: download.ReplayRecording):
     args = Args(play.video_file, play.video_tags, play.video_title,
                 play.video_description, play.video_category, "private")
     print("Uploading video: ", args)
-    upload_youtube.initialize_upload(youtube, args)
+    return upload_youtube.initialize_upload(youtube, args)
 
 
 if __name__ == "__main__":
