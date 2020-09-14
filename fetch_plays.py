@@ -1,5 +1,6 @@
 import praw
 import re
+from typing import List
 
 # osu-bot constants taken from https://github.com/christopher-dG/osu-bot/blob/master/osubot/consts.py
 mods2int = {
@@ -24,21 +25,7 @@ mods2int = {
 }
 
 
-class PlayDetails:
-    beatmap_name = None
-    beatmap_link = None
-    beatmapset_download = None
-    mapper_name = None
-    mapper_link = None
-    top_on_map = None
-    player_name = None
-    player_link = None
-    top_play_of_player = None
-    post_title = None
-    comment_text = None
-    length = None
-    mods_bitmask = None
-    mods_string = None
+class ScorePostInfo:
 
     _beatmap_re = re.compile(
         r"#### \[(.+?\[.+?\])\]\((https?://osu\.ppy\.sh/b/\d+[^\)\s]+)\)")
@@ -52,18 +39,46 @@ class PlayDetails:
         r"\|(?:[^\|\n]+\|)+\s+(\d+:\d+)\s+\|(?:[^\|\n]+\|)+")
     _mods_re = re.compile(r"\|\s+\+(\w+)\s+\|(?:[^\|\n]+\|)+")
 
-    def __init__(self, comment: str, title: str):
-        self.post_title = title
-        self.comment_text = comment
-        if match := re.search(self._beatmapset_download_re, comment):
+    def __init__(self, comment: praw.Reddit.comment = None, comment_text: str = None, post_title: str = None):
+        """ 
+        Pass in either comment or comment_text and post_title.
+        Comment object is preferred - the other 2 are kept only for unit testing. (I'm too lazy to make a mock)
+        """
+        self.beatmap_name = None
+        self.beatmap_link = None
+        self.beatmapset_download = None
+        self.mapper_name = None
+        self.mapper_link = None
+        self.top_on_map = None
+        self.player_name = None
+        self.player_link = None
+        self.top_play_of_player = None
+        self.post_title = None
+        self.post_id = None
+        self.comment_text = None
+        self.comment_id = None
+        self.length = None
+        self.mods_bitmask = None
+        self.mods_string = None
+
+        if comment is not None:
+            self.post_title = comment.submission.title
+            self.comment_text = comment.body
+            self.comment_id = comment.id
+            self.post_id = comment.submission.id
+        elif post_title is not None and comment_text is not None:
+            self.post_title = post_title
+            self.comment_text = comment_text
+
+        if match := re.search(self._beatmapset_download_re, self.comment_text):
             self.beatmapset_download = match.group(1)
-        if match := re.search(self._beatmap_re, comment):
+        if match := re.search(self._beatmap_re, self.comment_text):
             self.beatmap_name, self.beatmap_link = match.group(1, 2)
-        if match := re.search(self._mapper_re, comment):
+        if match := re.search(self._mapper_re, self.comment_text):
             self.mapper_name, self.mapper_link = match.group(1, 2)
-        if match := re.search(self._player_re, comment):
+        if match := re.search(self._player_re, self.comment_text):
             self.player_name, self.player_link = match.group(1, 2)
-        if matches := re.findall(self._length_re, comment):
+        if matches := re.findall(self._length_re, self.comment_text):
             try:
                 time_str = matches[-1].split(":")
                 self.length = 60 * int(time_str[0]) + int(time_str[1])
@@ -71,11 +86,14 @@ class PlayDetails:
                 print("Failed to parse map length")
         if self.beatmap_name:
             self.mods_bitmask = 0
-            if match := re.search(self._mods_re, comment):
+            if match := re.search(self._mods_re, self.comment_text):
                 self.mods_string = match.group(1)
                 for mod in mods2int:
                     if mod in self.mods_string:
                         self.mods_bitmask += mods2int[mod]
+
+    def __str__(self):
+        return "Play: {\n\t%s\n}" % "\n\t".join([f"'{k}': {v}" for k, v in self.__dict__.items()])
 
 
 def get_safe_name(string):
@@ -89,24 +107,28 @@ def get_digits(link):
     return link[last_slash + 1:] if last_slash != -1 else None
 
 
-def get_osugame_plays(sort_type: str, num_posts: int):
+def get_osugame_plays(sort_type: str, num_posts: int, reddit: praw.reddit = None):
     """
     This function handles the whole process.
     Here I realized just how obtuse the rest of the code in this file is
     """
-    reddit = initialize()
-    score_posts = get_subreddit_links(
+    if reddit is None:
+        reddit = initialize()
+    score_posts = get_score_posts(
         reddit, "osugame", sort_type, num_posts, "osu-bot")
-    plays = []
-    for title, comment_body in score_posts.items():
-        try:
-            plays.append(PlayDetails(comment_body, title))
-        except Exception as e:
-            print(f"Error getting play details from post '{title}':\n{e}")
-    return plays
+    return score_posts
 
 
-def get_subreddit_links(reddit: praw.Reddit, subreddit: str, sort_type: str, num_posts: int, author: str, use_skiplist=False):
+def get_scorepost_by_id(id: str, reddit: praw.Reddit = None):
+    if reddit is None:
+        reddit = initialize()
+    post = reddit.submission(id=id)
+    if comment := get_scorepost_comment(post, "osu-bot"):
+        return ScorePostInfo(comment)
+    return None
+
+
+def get_score_posts(reddit: praw.Reddit, subreddit: str, sort_type: str, num_posts: int, author: str, use_skiplist=False):
     """
     Uses the Reddit instance to retrieve the first num_posts from subreddit, sorted by sort_type.
     Then searches for top-level comments on these posts made by author (should be a bot that posts on all posts).
@@ -115,7 +137,7 @@ def get_subreddit_links(reddit: praw.Reddit, subreddit: str, sort_type: str, num
     """
     subreddit = reddit.subreddit(subreddit)
     num_posts = int(num_posts)
-    post_to_comment_by_author = {}
+    scoreposts = []
     if sort_type == 'hot':
         posts = subreddit.hot(limit=num_posts)
     elif sort_type in ['hour', 'day', 'week', 'month', 'year', 'all']:
@@ -129,20 +151,15 @@ def get_subreddit_links(reddit: praw.Reddit, subreddit: str, sort_type: str, num
         if use_skiplist and post.id in skip_list:
             print(f"Skipping post '{post.title}'")
             continue
-        try:
-            if comment := check_score_post(post, author):
-                print(f"Score post: '{post.title}'")
-                post_to_comment_by_author[post.title] = comment.body
-            else:
-                print(f"Not a score post: '{post.title}'")
-
-        except Exception as e:
-            print("Error while parsing comments", post.title)
-            print(e)
-    return post_to_comment_by_author
+        if comment := get_scorepost_comment(post, author):
+            print(f"Score post: '{post.title}'")
+            scoreposts.append(ScorePostInfo(comment))
+        else:
+            print(f"Not a score post: '{post.title}'")
+    return scoreposts
 
 
-def check_score_post(post: praw.Reddit.submission, author: str):
+def get_scorepost_comment(post: praw.Reddit.submission, author: str):
     """
     Return top-level comment by author or None if none is found.
     """

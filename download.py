@@ -5,6 +5,8 @@ import sys
 import io
 from typing import List
 
+DOWNLOAD_SCRIPT = "node osu-replay-downloader/fetch.js"
+
 
 class BeatmapDownloader:
     """
@@ -81,24 +83,27 @@ class OfficialProvider(BeatmapDownloader):
 
 
 class ReplayRecording:
-    _beatmap_downloader: BeatmapDownloader = None
-    play: fp.PlayDetails = None
-    replay_file: str = None
-    beatmap_file: str = None
-    video_file: str = None
-    video_title: str = None
-    video_description: str = None
-    video_tags: str = None
-    video_category: str = None
-    # video_visibility: str = None # only relevant at the upload step
 
-    def __init__(self, play: fp.PlayDetails = None, beatmap_downloader: BeatmapDownloader = None, comment: str = None, title: str = None):
+    def __init__(self, play: fp.ScorePostInfo = None, beatmap_downloader: BeatmapDownloader = None, comment: str = None, title: str = None):
+        self.play: fp.ScorePostInfo = None
+        self._beatmap_downloader: BeatmapDownloader = None
+        self.replay_file: str = None
+        self.beatmap_file: str = None
+        self.video_file: str = None
+        self.video_title: str = None
+        self.video_description: str = None
+        self.video_tags: str = None
+        self.video_category: str = None
+        # self.video_visibility: str = None # only relevant at the upload step
 
         if play is not None:
             self.play = play
         elif comment is not None and title is not None:
-            self.play = fp.PlayDetails(comment, title)
+            self.play = fp.ScorePostInfo(comment_text=comment, post_title=title)
         self._beatmap_downloader = beatmap_downloader
+
+    def __str__(self):
+        return "Replay Recording: {\n\t%s\n}" % "\n\t".join([f"'{k}': {v}" for k, v in self.__dict__.items()])
 
     def generate_video_attributes(self):
         # self._video_title = f"{self._play.player_name} | {self._play.beatmap_name}"
@@ -106,14 +111,15 @@ class ReplayRecording:
 
         self.video_description = f"""{self.play.post_title}
 
-        osu!lazer may show some extra misses/50s/100s. It is not perfectly accurate for stable replays.
-        
-        Player: {self.play.player_name} ({self.play.player_link})
-        Mapper: {self.play.mapper_name} ({self.play.mapper_link})
-        
+osu!lazer may show some extra misses/50s/100s. It is not perfectly accurate for stable replays.
 
-        Check out this project on GitHub: https://github.com/TheBicPen/osu-lazer-bot
-        
+Player: {self.play.player_name} ({self.play.player_link})
+Mapper: {self.play.mapper_name} ({self.play.mapper_link})
+Map: {self.play.beatmap_name} ({self.play.beatmap_link})
+Map download: {self.play.beatmapset_download}
+
+Check out this project on GitHub: https://github.com/TheBicPen/osu-lazer-bot
+
         """
         tags = ["osu", "osu!", "pp", "lazer", self.play.player_name,
                 self.play.beatmap_name, self.play.mapper_name, self.play.top_on_map]
@@ -128,7 +134,88 @@ class ReplayRecording:
             fp.get_digits(self.play.beatmapset_download), filename)
 
 
-def download_plays(download_option: str, max_plays_checked: int, reddit_sort_type: str, download_script: str = "node osu-replay-downloader/fetch.js", beatmap_provider=None) -> List[ReplayRecording]:
+def download_replays(recordings: List[ReplayRecording]):
+    """
+    Download replays for each ReplayRecording in recordings.
+    Mutate each recording object with the replay file.
+    """
+    try:
+        with open("creds/osu_token.txt", "r") as token_file:
+            token = token_file.readline().rstrip()
+    except IOError as e:
+        print("Unable to read osu! API token:", e)
+        return
+    for recording in recordings:
+        try:
+            helper_script = DOWNLOAD_SCRIPT.split()
+            play = recording.play
+            safe_player_name = fp.get_safe_name(play.player_name)
+            safe_beatmap_name = fp.get_safe_name(recording.play.beatmap_name)
+            output_file = f'downloads/{safe_beatmap_name}_{safe_player_name}.osr'
+            helper_script.extend([
+                '--api-key', token,
+                '--beatmap-id', str(fp.get_digits(play.beatmap_link)),
+                '--user-id', str(fp.get_digits(play.player_link)),
+                '--mods', str(play.mods_bitmask),
+                '--output-file', output_file
+            ])
+            subprocess.run(helper_script).check_returncode()
+            recording.replay_file = output_file
+        except subprocess.CalledProcessError as e:
+            if play is None:
+                print("There is no play object attached (!?)")
+            else:
+                print(f"Failed to download replay of {play.player_name} - {play.beatmap_name}\n",
+                      # e
+                      )
+        except AttributeError as e:
+            if play is None:
+                print("There is no play object attached to replay info",
+                      recording.__dict__)
+            else:
+                print(f"Play '{play.post_title}' is missing required information:",
+                      f"\nPlayer name:{play.player_name}, link:{play.player_link}",
+                      f"\nBeatmap name:{play.beatmap_name}, link:{play.beatmap_link}, mapset link:{play.beatmapset_download}",
+                      f"\nMods:{play.mods_string}, bitmask:{play.mods_bitmask}",
+                      f"\nLength:{play.length}",
+                      "\n")
+        # except Exception as e:
+        #     print("An error occurred while processing post",
+        #           recording.play.post_title, e)
+
+
+def download_beatmapsets(recordings: List[ReplayRecording], beatmap_provider=None):
+    """
+    Download beatmapsets for every recording in recordings. 
+    Set recording.beatmap_file for the recordings.
+    Beatmap_provider can either be a BeatmapDownloader or a string.
+    """
+    if isinstance(beatmap_provider, BeatmapDownloader):
+        provider = beatmap_provider
+    elif beatmap_provider == "official":
+        provider = OfficialProvider()
+    elif beatmap_provider == "bloodcat":
+        provider = BloodcatProvider()
+    else:
+        print("Trying to use official beatmap host")
+        provider = OfficialProvider()
+        if not provider:
+            print("Falling back to bloodcat beatmap host")
+            provider = BloodcatProvider()
+    for replay_info in recordings:
+        try:
+            safe_beatmap_name = fp.get_safe_name(
+                replay_info.play.beatmap_name)
+            replay_info.download_beatmapset(
+                f"downloads/{safe_beatmap_name}.osz", provider)
+        except:
+            print("Failed to download beatmap")
+            if replay_info.play is not None:
+                print(
+                    f"Beatmap name: {replay_info.play.beatmap_name}, post title: '{replay_info.play.post_title}'")
+
+
+def download_plays(download_option: str, max_plays_checked: int, reddit_sort_type: str, download_script: str = DOWNLOAD_SCRIPT, beatmap_provider=None) -> List[ReplayRecording]:
     """
     Check max_plays_checked r/osugame posts sorted by reddit_sort_type for plays.
     Download beatmaps and/or replays based on the string in download_option using the script download_replays.
@@ -140,78 +227,14 @@ def download_plays(download_option: str, max_plays_checked: int, reddit_sort_typ
     print()
     if "beatmaps" in download_option:
         print("Downloading beatmaps")
-        if beatmap_provider == "official":
-            provider = OfficialProvider()
-        elif beatmap_provider == "bloodcat":
-            provider = BloodcatProvider()
-        else:
-            print("Trying to use official beatmap host")
-            provider = OfficialProvider()
-            if not provider:
-                print("Falling back to bloodcat beatmap host")
-                provider = BloodcatProvider()
-        for replay_info in replay_infos:
-            try:
-                safe_beatmap_name = fp.get_safe_name(
-                    replay_info.play.beatmap_name)
-                replay_info.download_beatmapset(
-                    f"downloads/{safe_beatmap_name}.osz", provider)
-            except:
-                print("Failed to download beatmap")
-                if replay_info.play is not None:
-                    print(
-                        f"Beatmap name: {replay_info.play.beatmap_name}, post title: '{replay_info.play.post_title}'")
+        download_beatmapsets(replay_infos, beatmap_provider)
     else:
         print("Skipping beatmap download")
 
     print()
     if "replays" in download_option:
         print("Downloading replays")
-        try:
-            with open("creds/osu_token.txt", "r") as token_file:
-                token = token_file.readline().rstrip()
-        except IOError as e:
-            print("Unable to read osu! API token:", e)
-            return
-
-        for replay_info in replay_infos:
-            try:
-                helper_script = download_script.split()
-                play = replay_info.play
-                safe_player_name = fp.get_safe_name(play.player_name)
-                safe_beatmap_name = fp.get_safe_name(
-                    replay_info.play.beatmap_name)
-                output_file = f'downloads/{safe_beatmap_name}_{safe_player_name}.osr'
-                helper_script.extend([
-                    '--api-key', token,
-                    '--beatmap-id', str(fp.get_digits(play.beatmap_link)),
-                    '--user-id', str(fp.get_digits(play.player_link)),
-                    '--mods', str(play.mods_bitmask),
-                    '--output-file', output_file
-                ])
-                subprocess.run(helper_script).check_returncode()
-                replay_info.replay_file = output_file
-            except subprocess.CalledProcessError as e:
-                if play is None:
-                    print("There is no play object attached (!?)")
-                else:
-                    print(f"Failed to download replay of {play.player_name} - {play.beatmap_name}\n",
-                          # e
-                          )
-            except AttributeError as e:
-                if play is None:
-                    print("There is no play object attached to replay info",
-                          replay_info.__dict__)
-                else:
-                    print(f"Play '{play.post_title}' is missing required information:",
-                          f"\nPlayer name:{play.player_name}, link:{play.player_link}",
-                          f"\nBeatmap name:{play.beatmap_name}, link:{play.beatmap_link}, mapset link:{play.beatmapset_download}",
-                          f"\nMods:{play.mods_string}, bitmask:{play.mods_bitmask}",
-                          f"\nLength:{play.length}",
-                          "\n")
-            # except Exception as e:
-            #     print("An error occurred while processing post",
-            #           replay_info.play.post_title, e)
+        download_replays(replay_infos)
     else:
         print("Skipping replay download")
     return replay_infos

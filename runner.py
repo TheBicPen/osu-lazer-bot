@@ -1,7 +1,7 @@
 
 import download
 import subprocess
-from fetch_plays import get_safe_name
+import fetch_plays as fp
 from time import time, sleep
 import upload_youtube
 from collections import namedtuple
@@ -15,13 +15,18 @@ DOWNLOAD_OPTION = "beatmaps replays"
 BEATMAP_LOAD_TIMEOUT = 10
 MAX_REPLAY_LENGTH = 900
 COMPRESSION_CRF = 5
+MODE="auto"
 
 
-def main(num_plays: int, sort_type: str, replay_infos: List[download.ReplayRecording] = None):
+def main(mode: str, num_plays: int, sort_type: str):
 
-    if replay_infos is None:
+
+    if mode in ["auto", "interactive"]:
         replay_infos = download.download_plays(
             DOWNLOAD_OPTION, num_plays, sort_type)
+    elif mode in ["manual"]:
+        manual()
+        return
 
     num_imported_maps = import_maps(replay_infos)
     print(f"Imported {num_imported_maps} maps")
@@ -37,6 +42,53 @@ def main(num_plays: int, sort_type: str, replay_infos: List[download.ReplayRecor
         else:
             print(f"Skipping recording '{replay_info.play.player_name} - {replay_info.play.beatmap_name}'" +
                   f"because either replay file '{replay_info.replay_file}' or play length '{replay_info.play.length}' are missing")
+
+
+def manual():
+    reddit = fp.initialize()
+    recording = None
+    action = "add"
+    while action != "exit":
+        try:
+            if action == "add":
+                post_id = input("Please input a post ID: ")
+                post = fp.get_scorepost_by_id(post_id, reddit)
+                recording = download.ReplayRecording(post)
+            elif action == "download":
+                if input("Download replays? [y/n]: ") == "y":
+                    download.download_replays([recording])
+                if input("Download beatmaps? [y/n]: ") == "y":
+                    download.download_beatmapsets([recording])
+            elif action == "set":
+                prop = input("Property name to set: ")
+                try:
+                    print(f"Current value of property {prop}: {getattr(recording, prop)}")
+                    value = input("Property value to set: ")
+                    setattr(recording, prop, value)
+                except AttributeError:
+                    print(f"Recording {recording} has no property named {prop}. See {dir(recording)}")
+            elif action == "go":
+                num_imported_maps = import_maps([recording])
+                print(f"Imported {num_imported_maps} maps")
+                record(recording)
+                factor = int(input("Select compression ratio [0-25]"))
+                upscale(recording, compression=factor)
+                upload(recording)
+                #                 if input("Import beatmaps? [y/n]: ") == "y":
+                #     num_imported_maps = import_maps([recording])
+                #     print(f"Imported {num_imported_maps} maps")
+                # if input("Record? [y/n]: ") == "y":
+                #     record(recording)
+                # if input("Upscale? [y/n]: ") == "y":
+                #     factor = int(input("Select compression ratio [0-25]"))
+                #     upscale(recording, compression=factor)
+                # if input("Upload? [y/n]: ") == "y":
+                #     upload(recording)
+        except KeyboardInterrupt as e:
+            print()
+        finally:
+            print("Score:", recording)
+            action = input("Menu:\n\t[set] property of recording\n\t[download] replays and beatmaps\n\t[add] post\n\t[go] record and upload scores\n\t[exit]\n")
 
 
 def record_ffmpeg(play_length: int, output_file: str, replay_file: str):
@@ -105,7 +157,7 @@ def record(replay_info: download.ReplayRecording, recording_folder: str = None):
     if recording_folder is None:
         with open("creds/recording_folder.txt", "r") as f:
             recording_folder = f.read()
-    output_file = os.path.join(recording_folder, get_safe_name(
+    output_file = os.path.join(recording_folder, fp.get_safe_name(
         f"{replay_info.play.beatmap_name}_{replay_info.play.player_name}_{int(time())}") + ".mkv")
     record_ssr(replay_info.play.length+15,
                output_file, replay_info.replay_file)
@@ -139,8 +191,10 @@ def upload(play: download.ReplayRecording):
 
 if __name__ == "__main__":
     for arg in sys.argv:
-        if arg in ["hot", "hour", "day", "week", "month", "year", "all"]:
+        if arg in ["interactive", "auto", "manual"]:
+            MODE=arg
+        elif arg in ["hot", "hour", "day", "week", "month", "year", "all"]:
             SORT_TYPE = arg
         elif arg.isdigit():
             NUM_POSTS_CHECKED = int(arg)
-    main(sort_type=SORT_TYPE, num_plays=NUM_POSTS_CHECKED)
+    main(mode=MODE, sort_type=SORT_TYPE, num_plays=NUM_POSTS_CHECKED)

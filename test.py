@@ -14,7 +14,7 @@ class TestFP(unittest.TestCase):
 
             ^(kirito is legit – )[^Source](https://github.com/christopher-dG/osu-bot)^( | )[^Developer](https://reddit.com/u/PM_ME_DOG_PICS_PLS) [&nbsp;](http://x "Beatmap 'BABYMETAL - Road of Resistance  [Determined]': Not found")
         """
-        play = fp.PlayDetails(post, "")
+        play = fp.ScorePostInfo(comment_text=post, post_title="")
         self.assertEqual(play.comment_text, post)
         self.assertEqual(play.player_name, "Umbre")
         self.assertEqual(play.player_link, "https://osu.ppy.sh/u/2766034")
@@ -44,7 +44,7 @@ class TestFP(unittest.TestCase):
             ^(nice pass ecks dee – )[^Source](https://github.com/christopher-dG/osu-bot)^( | )[^Developer](https://reddit.com/u/PM_ME_DOG_PICS_PLS) [&nbsp;](http://x "Beatmap: Found in events
             .osu: Downloaded from S3")
             """
-        play = fp.PlayDetails(post, "")
+        play = fp.ScorePostInfo(comment_text=post, post_title="")
         self.assertEqual(play.comment_text, post)
         self.assertEqual(play.player_name, "Vaxei")
         self.assertEqual(play.player_link, "https://osu.ppy.sh/u/4787150")
@@ -79,7 +79,7 @@ class TestFP(unittest.TestCase):
         .osu: Downloaded from S3")
         """
         title = "XxfortniteproxX | 07th Expansion - rog-unlimitation [AngelHoney] +DT 85.17% 0 MISS! (9.77*) | 681pp | 954pp for FC | 557/850x | His new top play, Skipped 400, 500"
-        play = fp.PlayDetails(post, title)
+        play = fp.ScorePostInfo(comment_text=post, post_title=title)
         self.assertEqual(play.post_title, title)
         self.assertEqual(play.length, 91)
         self.assertEqual(play.player_name, "XxfortniteproxX")
@@ -113,7 +113,7 @@ class TestFP(unittest.TestCase):
         Max combo: Found via API
         .osu: Downloaded from S3")
         """
-        play = fp.PlayDetails(post, "title")
+        play = fp.ScorePostInfo(comment_text=post, post_title="title")
         self.assertEqual(play.length, 258)
         self.assertEqual(play.player_name, "Morsay")
         self.assertEqual(play.player_link, "https://osu.ppy.sh/u/4223607")
@@ -140,7 +140,7 @@ class TestFP(unittest.TestCase):
 ^(play more – )[^Source](https://github.com/christopher-dG/osu-bot)^( | )[^Developer](https://reddit.com/u/PM_ME_DOG_PICS_PLS) [&nbsp;](http://x "Beatmap: Found in events
 .osu: Downloaded from S3")
             """
-        play = fp.PlayDetails(post, "title")
+        play = fp.ScorePostInfo(comment_text=post, post_title="title")
         self.assertEqual(play.length, 59)
         self.assertEqual(play.player_name, "badeu")
         self.assertEqual(play.player_link, "https://osu.ppy.sh/u/1473890")
@@ -162,20 +162,20 @@ class TestCommentGetting(unittest.TestCase):
         post = self.reddit.submission(id=id)
         self.assertEqual(
             post.title, "Vaxei | Wakeshima Kanon - Tsukinami [Nostalgia] + HDDT (mapset by Reform, 8.8*) 99.42% FC #1 | 1023pp | 63.64 cv. UR | 1st DT FC, 1st STD 1k pp play!!!")
-        self.assertEqual(fp.check_score_post(post, "osu-bot").id, "etb5ktb")
-        self.assertTrue(fp.check_score_post(post, "osu-bot"))
+        self.assertEqual(fp.get_scorepost_comment(post, "osu-bot").id, "etb5ktb")
+        self.assertTrue(fp.get_scorepost_comment(post, "osu-bot"))
 
     def test_not_score_post(self):
         id = "5p2w25"
         post = self.reddit.submission(id=id)
         self.assertEqual(
             post.title, "The official portrait of our leader should be the #1 most upvoted post in Reddit history")
-        self.assertFalse(fp.check_score_post(post, "osu-bot"))
-        self.assertIsNone(fp.check_score_post(post, "osu-bot"))
+        self.assertFalse(fp.get_scorepost_comment(post, "osu-bot"))
+        self.assertIsNone(fp.get_scorepost_comment(post, "osu-bot"))
 
     def test_get_top_alltime(self):
         # assume that vaxei 1k is in top 5 of all time
-        posts_to_comments = fp.get_subreddit_links(
+        score_posts = fp.get_score_posts(
             self.reddit, "osugame", "all", 5, "osu-bot", False)
         title = "Vaxei | Wakeshima Kanon - Tsukinami [Nostalgia] + HDDT (mapset by Reform, 8.8*) 99.42% FC #1 | 1023pp | 63.64 cv. UR | 1st DT FC, 1st STD 1k pp play!!!"
         comment = """#### [Wakeshima Kanon - Tsukinami [Nostalgia]](https://osu.ppy.sh/b/1872396?m=0) [(&#x2b07;)](https://osu.ppy.sh/d/896080 "Download this beatmap") by [Reform](https://osu.ppy.sh/u/3723568 "8 ranked, 0 qualified, 0 loved, 62 unranked") || osu!standard
@@ -195,7 +195,7 @@ YouTube links: [[1]](https://youtu.be/FBFYRwmNvCE "'Vaxei | Wakeshima Kanon - Ts
 ***
 
 ^(these movements are from an algorithm designed in java – )[^Source](https://github.com/christopher-dG/osu-bot)^( | )[^Developer](https://reddit.com/u/PM_ME_DOG_PICS_PLS) [&nbsp;](http://x "Beatmap: Found in events")"""
-        self.assertEqual(posts_to_comments[title], comment)
+        self.assertEqual(score_posts[0].comment_text, comment)
 
     def test_get_top_alltime_high_level(self):
         # assume that vaxei 1k is in top 5 of all time
