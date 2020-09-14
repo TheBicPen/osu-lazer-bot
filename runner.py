@@ -61,12 +61,16 @@ def manual():
                     download.download_beatmapsets([recording])
             elif action == "set":
                 prop = input("Property name to set: ")
+                obj_to_set = recording
                 try:
-                    print(f"Current value of property {prop}: {getattr(recording, prop)}")
+                    for i in prop.split(".")[:-1]:
+                        obj_to_set = getattr(obj_to_set, i)
+                    prop_name = prop.split(".")[-1]
+                    print(f"Current value of property {prop_name}: {getattr(obj_to_set, prop_name)}")
                     value = input("Property value to set: ")
-                    setattr(recording, prop, value)
+                    setattr(obj_to_set, prop_name, value)
                 except AttributeError:
-                    print(f"Recording {recording} has no property named {prop}. See {dir(recording)}")
+                    print(f"Recording {obj_to_set} has no property named {prop}. See {dir(obj_to_set)}")
             elif action == "go":
                 num_imported_maps = import_maps([recording])
                 print(f"Imported {num_imported_maps} maps")

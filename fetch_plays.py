@@ -24,6 +24,8 @@ mods2int = {
     # TODO: Unranked Mania mods, maybe.
 }
 
+PLAYER_SKIP_LIST_FILE = "creds/skip_players.txt"
+
 
 class ScorePostInfo:
 
@@ -127,6 +129,17 @@ def get_scorepost_by_id(id: str, reddit: praw.Reddit = None):
         return ScorePostInfo(comment)
     return None
 
+def filter_playernames(scores: List[ScorePostInfo], skip_list = PLAYER_SKIP_LIST_FILE):
+    with open(skip_list, "r+") as f:
+        skip_list = [line.strip() for line in f.readlines()]
+    scores_pop = []
+    for i, score in enumerate(scores):
+        if score.player_link in skip_list:
+            scores_pop.append(i)
+    scores_pop.sort()
+    scores_pop.reverse()
+    for i in scores_pop:
+        scores.pop(i)
 
 def get_score_posts(reddit: praw.Reddit, subreddit: str, sort_type: str, num_posts: int, author: str, use_skiplist=False):
     """
