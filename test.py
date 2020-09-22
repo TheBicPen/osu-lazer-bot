@@ -148,6 +148,35 @@ class TestFP(unittest.TestCase):
         self.assertEqual(play.mapper_link, "https://osu.ppy.sh/u/4547551")
         self.assertEqual(play.beatmap_link, "https://osu.ppy.sh/b/1681634?m=0")
         self.assertEqual(play.beatmapset_download, "https://osu.ppy.sh/d/801074")
+    
+    def test_map_gd(self):
+        # score on guest difficulty
+        post = """#### [Brandy - Cross Time !! [Muya's XX]](https://osu.ppy.sh/b/2150750?m=0) [(&#x2b07;)](https://osu.ppy.sh/d/973162 "Download this beatmap") by [Leader](https://osu.ppy.sh/u/631530) (GD by [Muya](https://osu.ppy.sh/u/153323 "30 ranked, 0 qualified, 0 loved, 23 unranked")) || osu!standard
+**#2: [Woey](https://osu.ppy.sh/u/3792472 "11,859pp - rank #349 (#55 US) - 99.17% accuracy - 335,489 playcount") (+HD - 99.91% - 341pp) || 927x max combo || Ranked (2019) || 46,098 plays**
+
+|       | CS  | AR | OD | HP  | SR   | BPM | Length | pp (95% &#124; 96.76% &#124; 98% &#124; 99% &#124; 100%) |
+:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:
+| NoMod | 5   | 9  | 9  | 7   | 5.93 | 160 | 02:04  | 221 &#124; 239 &#124; 259 &#124; 281 &#124; 310          |
+| +HDHR | 6.5 | 10 | 10 | 9.8 | 7.06 | 160 | 02:04  | 400 &#124; 429 &#124; 461 &#124; 497 &#124; 546          |
+
+| Player                                                                     | Rank                      | pp    | Accuracy | Playstyle | Playcount | Top Play                                                                                                                                                                                                                                       |
+:-:|:-:|:-:|:-:|:-:|:-:|:-:
+| [YokesPai](https://osu.ppy.sh/u/6399568 "Previously known as 'Yokes0708'") | #2,250&nbsp;(#28&nbsp;NO) | 9,025 | 97.97%   | TB+KB     | 66,434    | [Tanaka&nbsp;Hirokazu&nbsp;&#x2011;&nbsp;C&#x2011;TYPE&nbsp;[Bonsai's&nbsp;BasS&#x2011;TYPE]](https://osu.ppy.sh/b/1620144?m=0 "SR8.02 - CS6.2 - AR10.3 - OD10.4 - HP6 - 223BPM - 00:25") +HDDT&nbsp;&#124;&nbsp;97.94%&nbsp;&#124;&nbsp;555pp |
+
+YouTube links: [[1]](https://youtu.be/ZDU0SNefyOM "'YokesPai | Brandy - Cross Time !! [Muya's XX] +HDHR FC #1 | 429pp | 1st HDHR FC!' by 'osu! Lazer Replays'")
+
+***
+
+^(omg kappadar big fan – )[^Source](https://github.com/christopher-dG/osu-bot)^( | )[^Developer](https://reddit.com/u/PM_ME_DOG_PICS_PLS) [&nbsp;](http://x "Beatmap: Found in events
+.osu: Downloaded from S3")"""
+        play = fp.ScorePostInfo(comment_text=post, post_title="title")
+        self.assertEqual(play.length, 124)
+        self.assertEqual(play.player_name, "YokesPai")
+        self.assertEqual(play.player_link, "https://osu.ppy.sh/u/6399568")
+        self.assertEqual(play.mapper_name, "Leader")
+        self.assertEqual(play.mapper_link, "https://osu.ppy.sh/u/631530")
+        self.assertEqual(play.beatmap_link, "https://osu.ppy.sh/b/2150750?m=0")
+        self.assertEqual(play.beatmapset_download, "https://osu.ppy.sh/d/973162")
 
         
 

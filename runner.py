@@ -69,6 +69,7 @@ def manual():
                     print(f"Current value of property {prop_name}: {getattr(obj_to_set, prop_name)}")
                     value = input("Property value to set: ")
                     setattr(obj_to_set, prop_name, value)
+                    print(f"Set {prop_name} of {obj_to_set} to {value}")
                 except AttributeError:
                     print(f"Recording {obj_to_set} has no property named {prop}. See {dir(obj_to_set)}")
             elif action == "go":
@@ -77,12 +78,13 @@ def manual():
                 record(recording)
                 factor = int(input("Select compression ratio [0-25]"))
                 upscale(recording, compression=factor)
-                upload(recording)
+                print("Upscaled file")
+                vid_id = upload(recording)
+                print("Uploaded video", vid_id)
         except KeyboardInterrupt as e:
-            print()
-        finally:
-            print("Score:", recording)
-            action = input("Menu:\n\t[set] property of recording\n\t[download] replays and beatmaps\n\t[add] post\n\t[go] record and upload scores\n\t[exit]\n")
+            print("Back to main menu")
+        print("Score:", recording)
+        action = input("Menu:\n\t[set] property of recording\n\t[download] replays and beatmaps\n\t[add] post\n\t[go] record and upload scores\n\t[exit]\n")
 
 
 def record_ffmpeg(play_length: int, output_file: str, replay_file: str):
@@ -156,7 +158,7 @@ def record(replay_info: download.ReplayRecording, recording_folder: str = None):
             recording_folder = f.read()
     output_file = os.path.join(recording_folder, fp.get_safe_name(
         f"{replay_info.play.beatmap_name}_{replay_info.play.player_name}_{int(time())}") + ".mkv")
-    record_ssr(replay_info.play.length+15,
+    record_ssr(int(replay_info.play.length)+20,
                output_file, replay_info.replay_file)
     replay_info.video_file = output_file
     return output_file

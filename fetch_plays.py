@@ -34,7 +34,7 @@ class ScorePostInfo:
     _beatmapset_download_re = re.compile(
         r"\[\(&#x2b07;\)\]\((https?://osu\.ppy\.sh/d/\d+)\s*\"Download this beatmap\"\)")
     _mapper_re = re.compile(
-        r"by \[(.*)\]\((https?://osu\.ppy\.sh/u/\d+)( \"[^\"]+\")?\)")
+        r"by \[(.+?)\]\((https?://osu\.ppy\.sh/u/\d+)( \"[^\"]+\")?\)")
     _player_re = re.compile(
         r"\[(.+?)\]\((https?://osu\.ppy\.sh/u/\d+)(?:\s*?\"Previously known as \'.+?\'\")?\)\s+\|\s+#\d+")
     _length_re = re.compile(
@@ -72,10 +72,8 @@ class ScorePostInfo:
             self.post_title = post_title
             self.comment_text = comment_text
 
-        if match := re.search(self._beatmapset_download_re, self.comment_text):
-            self.beatmapset_download = match.group(1)
-        if match := re.search(self._beatmap_re, self.comment_text):
-            self.beatmap_name, self.beatmap_link = match.group(1, 2)
+        self.set_beatmap(self.comment_text)
+        
         if match := re.search(self._mapper_re, self.comment_text):
             self.mapper_name, self.mapper_link = match.group(1, 2)
         if match := re.search(self._player_re, self.comment_text):
@@ -89,13 +87,25 @@ class ScorePostInfo:
         if self.beatmap_name:
             self.mods_bitmask = 0
             if match := re.search(self._mods_re, self.comment_text):
-                self.mods_string = match.group(1)
-                for mod in mods2int:
-                    if mod in self.mods_string:
-                        self.mods_bitmask += mods2int[mod]
+                self.set_mods(match.group(1))
 
     def __str__(self):
         return "Play: {\n\t%s\n}" % "\n\t".join([f"'{k}': {v}" for k, v in self.__dict__.items()])
+
+
+    def set_mods(self, mods_string: str):
+        self.mods_string = mods_string
+        if self.mods_bitmask is None:
+            self.mods_bitmask = 0
+        for mod in mods2int:
+            if mod in self.mods_string:
+                self.mods_bitmask += mods2int[mod]
+
+    def set_beatmap(self, comment: str):
+        if match := re.search(self._beatmapset_download_re, comment):
+            self.beatmapset_download = match.group(1)
+        if match := re.search(self._beatmap_re, comment):
+            self.beatmap_name, self.beatmap_link = match.group(1, 2)
 
 
 def get_safe_name(string):
