@@ -1,0 +1,24 @@
+From 3cdfddfc2c09272d84b4e0862e402fc566332adf Mon Sep 17 00:00:00 2001
+From: bic <mashkal2000@gmail.com>
+Date: Wed, 23 Sep 2020 12:49:03 -0700
+Subject: [PATCH] Open stats screen automatically
+
+---
+ osu.Game/Screens/Ranking/ScorePanel.cs | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/osu.Game/Screens/Ranking/ScorePanel.cs b/osu.Game/Screens/Ranking/ScorePanel.cs
+index 1904da709..3ba0a80d3 100644
+--- a/osu.Game/Screens/Ranking/ScorePanel.cs
++++ b/osu.Game/Screens/Ranking/ScorePanel.cs
+@@ -166,6 +166,7 @@ protected override void LoadComplete()
+             base.LoadComplete();
+ 
+             updateState();
++            PostExpandAction?.Invoke();
+ 
+             topLayerBackground.FinishTransforms(false, nameof(Colour));
+             middleLayerBackground.FinishTransforms(false, nameof(Colour));
+-- 
+2.25.1
+

@@ -27,6 +27,20 @@ def main(mode: str, num_plays: int, sort_type: str):
     elif mode in ["manual"]:
         manual()
         return
+    elif mode == "single":
+        reddit = fp.initialize()
+        recording = None
+        post_id = input("Please input a post ID: ")
+        post = fp.get_scorepost_by_id(post_id, reddit)
+        recording = download.ReplayRecording(post)
+        download.download_replays([recording])
+        download.download_beatmapsets([recording])
+        num_imported_maps = import_maps([recording])
+        print(f"Imported {num_imported_maps} maps")
+        record(recording)
+        upscale(recording)
+        print("Upscaled file")
+        vid_id = upload(recording)
 
     num_imported_maps = import_maps(replay_infos)
     print(f"Imported {num_imported_maps} maps")
@@ -190,7 +204,7 @@ def upload(play: download.ReplayRecording):
 
 if __name__ == "__main__":
     for arg in sys.argv:
-        if arg in ["interactive", "auto", "manual"]:
+        if arg in ["interactive", "auto", "manual", "single"]:
             MODE=arg
         elif arg in ["hot", "hour", "day", "week", "month", "year", "all"]:
             SORT_TYPE = arg

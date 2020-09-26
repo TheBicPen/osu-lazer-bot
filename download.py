@@ -123,7 +123,7 @@ Check out this project on GitHub: https://github.com/TheBicPen/osu-lazer-bot
         """
         tags = ["osu", "osu!", "pp", "lazer", self.play.player_name,
                 self.play.beatmap_name, self.play.mapper_name, self.play.top_on_map]
-        self.video_tags = ','.join([str(tag) for tag in tags])[:500]
+        self.video_tags = ','.join([str(tag) for tag in tags if tag])[:500]
         # gaming category as of 2020. I'm not spending API quota on this
         self.video_category = "22"
 
