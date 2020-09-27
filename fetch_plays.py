@@ -82,7 +82,7 @@ class ScorePostInfo:
             try:
                 time_str = matches[-1].split(":")
                 self.length = 60 * int(time_str[0]) + int(time_str[1])
-            except:
+            except Exception:
                 print("Failed to parse map length")
         if self.beatmap_name:
             self.mods_bitmask = 0
@@ -214,7 +214,7 @@ def initialize():
         with open("creds/reddit_token.txt", "r") as token_file:
             token = token_file.readlines()
         token[0] = token[0].strip()
-    except:
+    except Exception:
         print("Unable to read Reddit API token")
         return
     try:
@@ -222,7 +222,7 @@ def initialize():
                              client_secret=token[1],
                              user_agent='lazerbot post parser - https://github.com/TheBicPen/osu-lazer-bot')
         return reddit
-    except:
+    except Exception:
         print("Unable to initialize Reddit instance")
 
 

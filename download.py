@@ -60,7 +60,7 @@ class OfficialProvider(BeatmapDownloader):
             try:
                 with open('creds/osu_credentials.txt', 'w+') as osu_creds:
                     osu_creds.writelines(["USERNAME\n", "PASSWORD\n"])
-            except:
+            except Exception:
                 print("Unable to create file")
             raise FileNotFoundError
         # 302 on successful login, 200 on failure
@@ -208,7 +208,7 @@ def download_beatmapsets(recordings: List[ReplayRecording], beatmap_provider=Non
                 replay_info.play.beatmap_name)
             replay_info.download_beatmapset(
                 f"downloads/{safe_beatmap_name}.osz", provider)
-        except:
+        except Exception:
             print("Failed to download beatmap")
             if replay_info.play is not None:
                 print(

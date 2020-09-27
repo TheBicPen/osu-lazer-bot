@@ -46,8 +46,26 @@ def main(mode: str = MODE, *args):
         for replay_info in replay_infos:
            make_video(replay_info)
            sleep(3)
+    elif mode == "stream":
+        stream(*args)
+        return
     else:
         print("invalid mode", mode)
+
+def stream(scale=SCALE):
+    reddit = fp.initialize()
+    for post in reddit.subreddit("osugame").stream.submissions():
+        try:
+            print(post.title)
+            if comment := fp.get_scorepost_comment(post, "osu-bot"):
+                replay_info = download.ReplayRecording(fp.ScorePostInfo(comment))
+                download.download_beatmapsets([replay_info])
+                download.download_replays([replay_info])
+                import_maps([replay_info])
+                print("Recording video", replay_info)
+                make_video(replay_info, scale)
+        except Exception:
+            pass # ¯\_(ツ)_/¯
 
 def single(post_id: str = None, post_to_reddit=False, scale=SCALE):
     reddit = fp.initialize()
