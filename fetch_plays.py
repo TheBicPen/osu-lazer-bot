@@ -130,6 +130,14 @@ def get_osugame_plays(sort_type: str, num_posts: int, reddit: praw.reddit = None
         reddit, "osugame", sort_type, num_posts, "osu-bot")
     return score_posts
 
+def post_vid_to_reddit(vid_id: str, post_id: str, reddit: praw.Reddit = None):
+    if vid_id is None or post_id is None:
+        return
+    comment = "lazer replay https://www.youtube.com/watch?v=" + vid_id
+    if reddit is None:
+        reddit = initialize()
+    return reddit.submission(id=post_id).reply(comment)
+
 
 def get_scorepost_by_id(id: str, reddit: praw.Reddit = None):
     if reddit is None:

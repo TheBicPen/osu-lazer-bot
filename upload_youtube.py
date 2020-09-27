@@ -144,7 +144,8 @@ def resumable_upload(insert_request):
           print(("Video id '%s' was successfully uploaded." % response['id']))
           return response['id']
         else:
-          exit("The upload failed with an unexpected response: %s" % response)
+          print("The upload failed with an unexpected response: %s" % response)
+          return
     except HttpError as e:
       if e.resp.status in RETRIABLE_STATUS_CODES:
         error = "A retriable HTTP error %d occurred:\n%s" % (e.resp.status,
@@ -158,7 +159,8 @@ def resumable_upload(insert_request):
       print(error)
       retry += 1
       if retry > MAX_RETRIES:
-        exit("No longer attempting to retry.")
+        print("No longer attempting to retry.")
+        return
 
       max_sleep = 2 ** retry
       sleep_seconds = random.random() * max_sleep

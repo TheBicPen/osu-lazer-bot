@@ -3,7 +3,7 @@ creds/*
 downloads/*
 osu-replay-downloader
 temp.txt
-
+settingsfile.conf
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

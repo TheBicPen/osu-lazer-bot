@@ -9,54 +9,89 @@ import os.path
 from typing import List
 import sys
 
+#default options
 NUM_POSTS_CHECKED = 8
 SORT_TYPE = "hot"
 DOWNLOAD_OPTION = "beatmaps replays"
 BEATMAP_LOAD_TIMEOUT = 10
 MAX_REPLAY_LENGTH = 900
 COMPRESSION_CRF = 5
-MODE="auto"
+MODE = "auto"
+SCALE = "ffmpeg"
 
 
-def main(mode: str, num_plays: int, sort_type: str):
+def main(mode: str = MODE, *args):
+    """
+    Mode is one of "manual", "single", "auto".
+        "manual" takes no args and prompts the user for everything.
+        "single" records and uploads a single replay from a reddit post.
+            This mode takes the reddit post id and whether to post the replay video as args. 
+        "auto" retrieves scoreposts from reddit and records them.
+            This mode takes the number of posts to check and the subreddit sort type as args.
+    """
 
-
-    if mode in ["auto", "interactive"]:
-        replay_infos = download.download_plays(
-            DOWNLOAD_OPTION, num_plays, sort_type)
-    elif mode in ["manual"]:
-        manual()
+    if mode == "manual":
+        manual(*args)
         return
     elif mode == "single":
-        reddit = fp.initialize()
-        recording = None
-        post_id = input("Please input a post ID: ")
-        post = fp.get_scorepost_by_id(post_id, reddit)
-        recording = download.ReplayRecording(post)
-        download.download_replays([recording])
-        download.download_beatmapsets([recording])
-        num_imported_maps = import_maps([recording])
+        single(*args)
+        return
+
+    elif mode == "auto":
+        replay_infos = download.download_plays(
+            DOWNLOAD_OPTION, *args)
+        num_imported_maps = import_maps(replay_infos)
         print(f"Imported {num_imported_maps} maps")
-        record(recording)
-        upscale(recording)
-        print("Upscaled file")
-        vid_id = upload(recording)
 
-    num_imported_maps = import_maps(replay_infos)
+        for replay_info in replay_infos:
+           make_video(replay_info)
+           sleep(3)
+    else:
+        print("invalid mode", mode)
+
+def single(post_id: str = None, post_to_reddit=False, scale=SCALE):
+    reddit = fp.initialize()
+    recording = None
+    if post_id is None:
+        post_id = input("Please input a post ID: ")
+    post = fp.get_scorepost_by_id(post_id, reddit)
+    recording = download.ReplayRecording(post)
+    download.download_replays([recording])
+    download.download_beatmapsets([recording])
+    num_imported_maps = import_maps([recording])
     print(f"Imported {num_imported_maps} maps")
+    vid_id = make_video(recording, scale)
+    print("Uploaded video with id", vid_id)
+    if post_to_reddit:
+        posted_comment = fp.post_vid_to_reddit(vid_id, post_id, reddit)
+        print("Posted comment", posted_comment)
 
-    for replay_info in replay_infos:
+
+def make_video(replay_info: download.ReplayRecording, scale: str = SCALE):
+    """ 
+    The video production pipeline. Records and uploads a replay from replay_info.
+    Scale controls whether or not the video gets upscaled to 1440p.
+        "auto" scales while recording (this results in lower performance but faster overall pipeline and smaller output file)
+        "ffmpeg" scales the video after recording with compression ration COMPRESSION_CRF, defined at the top of this file.
+        Other values do not upscale the video.
+        Returns the video id if it was uploaded successfully.
+    """
+    try:
         if replay_info.replay_file and replay_info.play.length:
-            record(replay_info)
-            print("Upscaling file")
-            upscale(replay_info)
-            print("Uploading file")
-            upload(replay_info)
-            sleep(3)
+            if scale == "auto":
+                record(replay_info, None, True)
+            elif scale == "ffmpeg":
+                record(replay_info, None, False)
+                upscale(replay_info)
+                print("Upscaled file with ffmpeg")
+            return upload(replay_info)
         else:
             print(f"Skipping recording '{replay_info.play.player_name} - {replay_info.play.beatmap_name}'" +
-                  f"because either replay file '{replay_info.replay_file}' or play length '{replay_info.play.length}' are missing")
-
+                    f"because either replay file '{replay_info.replay_file}' or play length '{replay_info.play.length}' are missing")
+            return None
+    except AttributeError:
+        print("replay_info has no valid play object attached")
+        return None
 
 def manual():
     reddit = fp.initialize()
@@ -80,12 +115,14 @@ def manual():
                     for i in prop.split(".")[:-1]:
                         obj_to_set = getattr(obj_to_set, i)
                     prop_name = prop.split(".")[-1]
-                    print(f"Current value of property {prop_name}: {getattr(obj_to_set, prop_name)}")
+                    print(
+                        f"Current value of property {prop_name}: {getattr(obj_to_set, prop_name)}")
                     value = input("Property value to set: ")
                     setattr(obj_to_set, prop_name, value)
                     print(f"Set {prop_name} of {obj_to_set} to {value}")
                 except AttributeError:
-                    print(f"Recording {obj_to_set} has no property named {prop}. See {dir(obj_to_set)}")
+                    print(
+                        f"Recording {obj_to_set} has no property named {prop}. See {dir(obj_to_set)}")
             elif action == "go":
                 num_imported_maps = import_maps([recording])
                 print(f"Imported {num_imported_maps} maps")
@@ -98,7 +135,8 @@ def manual():
         except KeyboardInterrupt as e:
             print("Back to main menu")
         print("Score:", recording)
-        action = input("Menu:\n\t[set] property of recording\n\t[download] replays and beatmaps\n\t[add] post\n\t[go] record and upload scores\n\t[exit]\n")
+        action = input(
+            "Menu:\n\t[set] property of recording\n\t[download] replays and beatmaps\n\t[add] post\n\t[go] record and upload scores\n\t[exit]\n")
 
 
 def record_ffmpeg(play_length: int, output_file: str, replay_file: str):
@@ -127,16 +165,15 @@ def import_maps(plays: List[download.ReplayRecording], timeout: int = BEATMAP_LO
     return len(maps)
 
 
-def record_ssr(play_length: int, output_file: str, replay_file: str):
+def record_ssr(play_length: int, output_file: str, replay_file: str, settings_template: str = "creds/settings.conf"):
     print(f"Recording with SSR for {play_length} seconds")
-    # this will launch osu but fail to record since the startup takes time
-    settings_template = "creds/settings.conf"
     settings_file = os.path.realpath("settingsfile.conf")
     try:
         with open(settings_template, "r") as r, open(settings_file, "w+") as w:
             w.write(r.read()
                     .replace("$REPLAY_FILE", replay_file)
                     .replace("$OUTPUT_FILE", output_file))
+        # this will launch osu but fail to record since the startup takes time
         proc = subprocess.Popen(["simplescreenrecorder",
                                  # "--start-hidden",
                                  "--start-recording",
@@ -166,14 +203,15 @@ def record_ssr(play_length: int, output_file: str, replay_file: str):
         subprocess.run(["pkill", "osu\!"])
 
 
-def record(replay_info: download.ReplayRecording, recording_folder: str = None):
+def record(replay_info: download.ReplayRecording, recording_folder: str = None, autoscale: bool = True):
     if recording_folder is None:
         with open("creds/recording_folder.txt", "r") as f:
             recording_folder = f.read()
     output_file = os.path.join(recording_folder, fp.get_safe_name(
         f"{replay_info.play.beatmap_name}_{replay_info.play.player_name}_{int(time())}") + ".mkv")
+    conf_file = "creds/settings_autoscale.conf" if autoscale else "creds/settings.conf"
     record_ssr(int(replay_info.play.length)+20,
-               output_file, replay_info.replay_file)
+               output_file, replay_info.replay_file, conf_file)
     replay_info.video_file = output_file
     return output_file
 
@@ -203,11 +241,4 @@ def upload(play: download.ReplayRecording):
 
 
 if __name__ == "__main__":
-    for arg in sys.argv:
-        if arg in ["interactive", "auto", "manual", "single"]:
-            MODE=arg
-        elif arg in ["hot", "hour", "day", "week", "month", "year", "all"]:
-            SORT_TYPE = arg
-        elif arg.isdigit():
-            NUM_POSTS_CHECKED = int(arg)
-    main(mode=MODE, sort_type=SORT_TYPE, num_plays=NUM_POSTS_CHECKED)
+    main(*sys.argv[1:])
