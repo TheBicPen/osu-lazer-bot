@@ -1,6 +1,8 @@
 import unittest
 import os
 import fetch_plays as fp
+import json
+
 
 class TestFP(unittest.TestCase):
     def test_no_map(self):
@@ -50,15 +52,16 @@ class TestFP(unittest.TestCase):
         self.assertEqual(play.player_link, "https://osu.ppy.sh/u/4787150")
         self.assertEqual(play.post_title, "")
         self.assertIsNone(play.top_play_of_player)
-        self.assertEqual(play.beatmap_name, "Chopin - Revolutionary Etude [Prestissimissimo]")
+        self.assertEqual(play.beatmap_name,
+                         "Chopin - Revolutionary Etude [Prestissimissimo]")
         self.assertEqual(play.beatmap_link, "https://osu.ppy.sh/b/1142884?m=0")
-        self.assertEqual(play.beatmapset_download, "https://osu.ppy.sh/d/539300")
+        self.assertEqual(play.beatmapset_download,
+                         "https://osu.ppy.sh/d/539300")
         self.assertEqual(play.mapper_link, "https://osu.ppy.sh/u/186243")
         self.assertEqual(play.mapper_name, "Louis Cyphre")
         self.assertEqual(play.mods_string, "HRNF")
         self.assertEqual(play.mods_bitmask, 17)
         self.assertEqual(play.length, 81)
-
 
     def test_length_change_mod(self):
         post = """#### [07th Expansion - rog-unlimitation [AngelHoney]](https://osu.ppy.sh/b/116128?m=0) [(&#x2b07;)](https://osu.ppy.sh/d/28751 "Download this beatmap") by [AngelHoney](https://osu.ppy.sh/u/104401) || osu!standard
@@ -89,10 +92,10 @@ class TestFP(unittest.TestCase):
         self.assertEqual(play.mapper_name, "AngelHoney")
         self.assertEqual(play.mapper_link, "https://osu.ppy.sh/u/104401")
         self.assertEqual(play.beatmap_link, "https://osu.ppy.sh/b/116128?m=0")
-        self.assertEqual(play.beatmapset_download, "https://osu.ppy.sh/d/28751")
+        self.assertEqual(play.beatmapset_download,
+                         "https://osu.ppy.sh/d/28751")
         # self.assertEqual(play.top_on_map, "aetrna")
         self.assertIsNone(play.top_on_map)
-
 
     def test_catch_post(self):
         post = """#### [xi - FREEDOM DiVE [Another]](https://osu.ppy.sh/b/126645?m=2) [(&#x2b07;)](https://osu.ppy.sh/d/39804 "Download this beatmap") by [Nakagawa-Kanon](https://osu.ppy.sh/u/87065 "20 ranked, 0 qualified, 2 loved, 31 unranked") || osu!catch
@@ -120,7 +123,8 @@ class TestFP(unittest.TestCase):
         self.assertEqual(play.mapper_name, "Nakagawa-Kanon")
         self.assertEqual(play.mapper_link, "https://osu.ppy.sh/u/87065")
         self.assertEqual(play.beatmap_link, "https://osu.ppy.sh/b/126645?m=2")
-        self.assertEqual(play.beatmapset_download, "https://osu.ppy.sh/d/39804")
+        self.assertEqual(play.beatmapset_download,
+                         "https://osu.ppy.sh/d/39804")
 
     def test_loved_post(self):
         # post is loved. mapper renamed. TD mod in #1. player renamed.
@@ -147,8 +151,9 @@ class TestFP(unittest.TestCase):
         self.assertEqual(play.mapper_name, "Fowwo")
         self.assertEqual(play.mapper_link, "https://osu.ppy.sh/u/4547551")
         self.assertEqual(play.beatmap_link, "https://osu.ppy.sh/b/1681634?m=0")
-        self.assertEqual(play.beatmapset_download, "https://osu.ppy.sh/d/801074")
-    
+        self.assertEqual(play.beatmapset_download,
+                         "https://osu.ppy.sh/d/801074")
+
     def test_map_gd(self):
         # score on guest difficulty
         post = """#### [Brandy - Cross Time !! [Muya's XX]](https://osu.ppy.sh/b/2150750?m=0) [(&#x2b07;)](https://osu.ppy.sh/d/973162 "Download this beatmap") by [Leader](https://osu.ppy.sh/u/631530) (GD by [Muya](https://osu.ppy.sh/u/153323 "30 ranked, 0 qualified, 0 loved, 23 unranked")) || osu!standard
@@ -176,9 +181,8 @@ YouTube links: [[1]](https://youtu.be/ZDU0SNefyOM "'YokesPai | Brandy - Cross Ti
         self.assertEqual(play.mapper_name, "Leader")
         self.assertEqual(play.mapper_link, "https://osu.ppy.sh/u/631530")
         self.assertEqual(play.beatmap_link, "https://osu.ppy.sh/b/2150750?m=0")
-        self.assertEqual(play.beatmapset_download, "https://osu.ppy.sh/d/973162")
-
-        
+        self.assertEqual(play.beatmapset_download,
+                         "https://osu.ppy.sh/d/973162")
 
 
 class TestCommentGetting(unittest.TestCase):
@@ -191,7 +195,8 @@ class TestCommentGetting(unittest.TestCase):
         post = self.reddit.submission(id=id)
         self.assertEqual(
             post.title, "Vaxei | Wakeshima Kanon - Tsukinami [Nostalgia] + HDDT (mapset by Reform, 8.8*) 99.42% FC #1 | 1023pp | 63.64 cv. UR | 1st DT FC, 1st STD 1k pp play!!!")
-        self.assertEqual(fp.get_scorepost_comment(post, "osu-bot").id, "etb5ktb")
+        self.assertEqual(fp.get_scorepost_comment(
+            post, "osu-bot").id, "etb5ktb")
         self.assertTrue(fp.get_scorepost_comment(post, "osu-bot"))
 
     def test_not_score_post(self):
@@ -248,7 +253,7 @@ YouTube links: [[1]](https://youtu.be/FBFYRwmNvCE "'Vaxei | Wakeshima Kanon - Ts
 ***
 
 ^(these movements are from an algorithm designed in java – )[^Source](https://github.com/christopher-dG/osu-bot)^( | )[^Developer](https://reddit.com/u/PM_ME_DOG_PICS_PLS) [&nbsp;](http://x "Beatmap: Found in events")"""
-        expected_play=None
+        expected_play = None
         for play in plays:
             if play.post_title == title:
                 expected_play = play
@@ -256,89 +261,177 @@ YouTube links: [[1]](https://youtu.be/FBFYRwmNvCE "'Vaxei | Wakeshima Kanon - Ts
         self.assertEqual(expected_play.post_title, title)
         self.assertEqual(expected_play.comment_text, comment)
 
+
 class TestPlayerFilter(unittest.TestCase):
     def setUp(self):
         with open("temp.txt", "w+") as f:
-            f.write("\n".join(["https://osu.ppy.sh/u/6169483", "https://osu.ppy.sh/u/2845588", "https://osu.ppy.sh/u/2308676"]))
-
+            f.write("\n".join(["https://osu.ppy.sh/u/6169483",
+                               "https://osu.ppy.sh/u/2845588", "https://osu.ppy.sh/u/2308676"]))
 
     def test_remove_player(self):
-        score_posts=[]
-        score_post_with_player = fp.ScorePostInfo(comment_text="test", post_title="title")
-        score_post_with_player.player_link="https://osu.ppy.sh/u/6169483"
+        score_posts = []
+        score_post_with_player = fp.ScorePostInfo(
+            comment_text="test", post_title="title")
+        score_post_with_player.player_link = "https://osu.ppy.sh/u/6169483"
         score_posts.append(score_post_with_player)
 
-        score_post_without_player = fp.ScorePostInfo(comment_text="test", post_title="title")
-        score_post_without_player.player_link="https://osu.ppy.sh/u/1234567"
+        score_post_without_player = fp.ScorePostInfo(
+            comment_text="test", post_title="title")
+        score_post_without_player.player_link = "https://osu.ppy.sh/u/1234567"
         score_posts.append(score_post_without_player)
-        fp.filter_playernames(score_posts, "temp.txt")
+        score_posts = fp.filter_playernames(score_posts, "temp.txt")
 
-        self.assertListEqual([score_post_without_player], score_posts)
+        self.assertEqual([score_post_without_player], score_posts)
 
     def test_remove_player_multiple_times(self):
-        score_posts=[]
-        score_post_with_player = fp.ScorePostInfo(comment_text="test1", post_title="title1")
-        score_post_with_player.player_link="https://osu.ppy.sh/u/6169483"
+        score_posts = []
+        score_post_with_player = fp.ScorePostInfo(
+            comment_text="test1", post_title="title1")
+        score_post_with_player.player_link = "https://osu.ppy.sh/u/6169483"
         score_posts.append(score_post_with_player)
 
-        score_post_without_player = fp.ScorePostInfo(comment_text="test", post_title="title")
-        score_post_without_player.player_link="https://osu.ppy.sh/u/1234567"
+        score_post_without_player = fp.ScorePostInfo(
+            comment_text="test", post_title="title")
+        score_post_without_player.player_link = "https://osu.ppy.sh/u/1234567"
         score_posts.append(score_post_without_player)
 
-        score_post_with_player = fp.ScorePostInfo(comment_text="test2", post_title="title2")
-        score_post_with_player.player_link="https://osu.ppy.sh/u/6169483"
+        score_post_with_player = fp.ScorePostInfo(
+            comment_text="test2", post_title="title2")
+        score_post_with_player.player_link = "https://osu.ppy.sh/u/6169483"
         score_posts.append(score_post_with_player)
 
-        score_post_with_player = fp.ScorePostInfo(comment_text="test3", post_title="title3")
-        score_post_with_player.player_link="https://osu.ppy.sh/u/6169483"
+        score_post_with_player = fp.ScorePostInfo(
+            comment_text="test3", post_title="title3")
+        score_post_with_player.player_link = "https://osu.ppy.sh/u/6169483"
         score_posts.append(score_post_with_player)
 
-        fp.filter_playernames(score_posts, "temp.txt")
-        self.assertListEqual([score_post_without_player], score_posts)
-    
+        score_posts = fp.filter_playernames(score_posts, "temp.txt")
+        self.assertEqual([score_post_without_player], score_posts)
+
     def test_remove_player_all(self):
-        score_posts=[]
-        score_post_with_player = fp.ScorePostInfo(comment_text="test1", post_title="title1")
-        score_post_with_player.player_link="https://osu.ppy.sh/u/6169483"
+        score_posts = []
+        score_post_with_player = fp.ScorePostInfo(
+            comment_text="test1", post_title="title1")
+        score_post_with_player.player_link = "https://osu.ppy.sh/u/6169483"
         score_posts.append(score_post_with_player)
 
-        score_post_with_player = fp.ScorePostInfo(comment_text="test2", post_title="title2")
-        score_post_with_player.player_link="https://osu.ppy.sh/u/6169483"
+        score_post_with_player = fp.ScorePostInfo(
+            comment_text="test2", post_title="title2")
+        score_post_with_player.player_link = "https://osu.ppy.sh/u/6169483"
         score_posts.append(score_post_with_player)
 
-        score_post_with_player = fp.ScorePostInfo(comment_text="test3", post_title="title3")
-        score_post_with_player.player_link="https://osu.ppy.sh/u/6169483"
+        score_post_with_player = fp.ScorePostInfo(
+            comment_text="test3", post_title="title3")
+        score_post_with_player.player_link = "https://osu.ppy.sh/u/6169483"
         score_posts.append(score_post_with_player)
 
-        fp.filter_playernames(score_posts, "temp.txt")
-        self.assertListEqual([], score_posts)
-    
+        score_posts = fp.filter_playernames(score_posts, "temp.txt")
+        self.assertEqual([], score_posts)
+
     def test_remove_player_multiple_times_same_post(self):
-        score_posts=[]
-        score_post_with_player = fp.ScorePostInfo(comment_text="test", post_title="title")
-        score_post_with_player.player_link="https://osu.ppy.sh/u/6169483"
+        score_posts = []
+        score_post_with_player = fp.ScorePostInfo(
+            comment_text="test", post_title="title")
+        score_post_with_player.player_link = "https://osu.ppy.sh/u/6169483"
         score_posts.append(score_post_with_player)
         score_posts.append(score_post_with_player)
         score_posts.append(score_post_with_player)
 
-        score_post_without_player = fp.ScorePostInfo(comment_text="test", post_title="title")
-        score_post_without_player.player_link="https://osu.ppy.sh/u/1234567"
+        score_post_without_player = fp.ScorePostInfo(
+            comment_text="test", post_title="title")
+        score_post_without_player.player_link = "https://osu.ppy.sh/u/1234567"
         score_posts.append(score_post_without_player)
 
-        fp.filter_playernames(score_posts, "temp.txt")
-        self.assertListEqual([score_post_without_player], score_posts)
-    
+        score_posts = fp.filter_playernames(score_posts, "temp.txt")
+        self.assertEqual([score_post_without_player], score_posts)
+
     def test_remove_none(self):
-        score_posts=[]
+        score_posts = []
 
-        score_post_without_player = fp.ScorePostInfo(comment_text="test", post_title="title")
-        score_post_without_player.player_link="https://osu.ppy.sh/u/1234567"
+        score_post_without_player = fp.ScorePostInfo(
+            comment_text="test", post_title="title")
+        score_post_without_player.player_link = "https://osu.ppy.sh/u/1234567"
         score_posts.append(score_post_without_player)
 
-        fp.filter_playernames(score_posts, "temp.txt")
-        self.assertListEqual([score_post_without_player], score_posts)
+        score_posts = fp.filter_playernames(score_posts, "temp.txt")
+        self.assertEqual([score_post_without_player], score_posts)
 
     def tearDown(self):
         os.remove("temp.txt")
+
+
+class TestScorePostFilter(unittest.TestCase):
+    def setUp(self):
+        self.reddit = fp.initialize()
+        self.l = [
+            # vaxei tsukinami hddt
+            {'player_link': "https://osu.ppy.sh/u/4787150",
+                'map': "https://osu.ppy.sh/b/1872396?m=0", 'mods': "HDDT"},
+            # umbre sidetracked day hdhr
+            {'player_link': "https://osu.ppy.sh/u/2766034",
+                'map': "https://osu.ppy.sh/b/2156842?m=0", 'mods': "HDHR"},
+            # aricin sidetracked day hddt
+            {'player_link': "https://osu.ppy.sh/u/1419095",
+                'map': "https://osu.ppy.sh/b/2156842?m=0", 'mods': "HDDT"},
+            # merami ascension to heaven dt
+            {'player_link': "https://osu.ppy.sh/u/6447454",
+                'map': "https://osu.ppy.sh/b/111680?m=0", 'mods': "DT"}
+        ]
+        with open("temp.json", "w+") as f:
+            json.dump(self.l, f)
+
+    def tearDown(self):
+        try:
+            os.remove("temp.json")
+        except OSError:
+            pass
+    
+    def test_make_score_info(self):
+        score_info = fp.make_score_info(fp.get_scorepost_by_id("caue08", self.reddit))
+        self.assertEqual(self.l[0], score_info)
+    
+    def test_scorepost_filter(self):
+        # if scorepost constructor fails, this test will not be accurate
+        posts = [fp.get_scorepost_by_id("caue08", self.reddit)]
+        posts_backup = posts.copy()
+        out = fp.filter_scoreposts(posts, "temp.json")
+        self.assertEqual([], out)
+        self.assertEqual(posts, posts_backup)
+
+    def test_none_to_filter(self):
+        # if scorepost constructor fails, this test will not be accurate
+        posts = [fp.get_scorepost_by_id("7s1ii6", self.reddit)]
+        posts_backup = posts.copy()
+        out = fp.filter_scoreposts(posts, "temp.json")
+        self.assertEqual(posts, out)
+        self.assertEqual(posts, posts_backup)
+
+    def test_same_player_different_map(self):
+        # if scorepost constructor fails, this test will not be accurate
+        posts = [fp.get_scorepost_by_id("cgzvz0", self.reddit)]
+        posts_backup = posts.copy()
+        out = fp.filter_scoreposts(posts, "temp.json")
+        self.assertEqual(posts, out)
+        self.assertEqual(posts, posts_backup)
+
+    def test_only_different_mods(self):
+        # if scorepost constructor fails, this test will not be accurate
+        posts = [fp.get_scorepost_by_id("hvjgov", self.reddit)]
+        posts_backup = posts.copy()
+        out = fp.filter_scoreposts(posts, "temp.json")
+        self.assertEqual(posts, out)
+        self.assertEqual(posts, posts_backup)
+    
+    def test_add_scorepost_to_list(self):
+        post = fp.get_scorepost_by_id("hb2czq", self.reddit)
+        expected = self.l.copy()
+        expected.append({
+            'player_link': "https://osu.ppy.sh/u/6447454",
+                'map': "https://osu.ppy.sh/b/1695382?m=0", 'mods': "HDNC"})
+        fp.add_score_info_to_skiplist(post, "temp.json")
+        with open("temp.json", "r") as f:
+            actual_skiplist = json.load(f)
+        self.assertEqual(actual_skiplist, expected)
+
 if __name__ == '__main__':
     unittest.main()

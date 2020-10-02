@@ -3,6 +3,7 @@ creds/*
 downloads/*
 osu-replay-downloader
 temp.txt
+temp.json
 settingsfile.conf
 
 # Byte-compiled / optimized / DLL files

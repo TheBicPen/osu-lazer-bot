@@ -1,6 +1,7 @@
 import praw
 import re
 from typing import List
+import json
 
 # osu-bot constants taken from https://github.com/christopher-dG/osu-bot/blob/master/osubot/consts.py
 mods2int = {
@@ -25,6 +26,7 @@ mods2int = {
 }
 
 PLAYER_SKIP_LIST_FILE = "creds/skip_players.txt"
+SCORE_SKIP_LIST_FILE = "creds/skip_plays.txt"
 
 
 class ScorePostInfo:
@@ -73,7 +75,7 @@ class ScorePostInfo:
             self.comment_text = comment_text
 
         self.set_beatmap(self.comment_text)
-        
+
         if match := re.search(self._mapper_re, self.comment_text):
             self.mapper_name, self.mapper_link = match.group(1, 2)
         if match := re.search(self._player_re, self.comment_text):
@@ -91,7 +93,6 @@ class ScorePostInfo:
 
     def __str__(self):
         return "Play: {\n\t%s\n}" % "\n\t".join([f"'{k}': {v}" for k, v in self.__dict__.items()])
-
 
     def set_mods(self, mods_string: str):
         self.mods_string = mods_string
@@ -130,6 +131,7 @@ def get_osugame_plays(sort_type: str, num_posts: int, reddit: praw.reddit = None
         reddit, "osugame", sort_type, num_posts, "osu-bot")
     return score_posts
 
+
 def post_vid_to_reddit(vid_id: str, post_id: str, reddit: praw.Reddit = None):
     if vid_id is None or post_id is None:
         return
@@ -147,17 +149,43 @@ def get_scorepost_by_id(id: str, reddit: praw.Reddit = None):
         return ScorePostInfo(comment)
     return None
 
-def filter_playernames(scores: List[ScorePostInfo], skip_list = PLAYER_SKIP_LIST_FILE):
+
+def filter_playernames(scores: List[ScorePostInfo], skip_list=PLAYER_SKIP_LIST_FILE):
+    """
+    Filter scoreposts whose player link is in the file skip_list.
+    Does not mutate the original list.
+    """
     with open(skip_list, "r+") as f:
         skip_list = [line.strip() for line in f.readlines()]
-    scores_pop = []
-    for i, score in enumerate(scores):
-        if score.player_link in skip_list:
-            scores_pop.append(i)
-    scores_pop.sort()
-    scores_pop.reverse()
-    for i in scores_pop:
-        scores.pop(i)
+    return [score for score in scores if score.player_link not in skip_list]
+
+
+def filter_scoreposts(scores: List[ScorePostInfo], skip_list=SCORE_SKIP_LIST_FILE):
+    """
+    Filter scoreposts that contain duplicates, where equality is determined by the dict returned by make_score_info.
+    Does not mutate the original list
+    """
+    with open(skip_list, "r+") as f:
+        skip_list = json.load(f)
+    return [score for score in scores if make_score_info(score) not in skip_list]
+
+
+def make_score_info(score: ScorePostInfo):
+    """
+    Return a dict of some key properties of a play that can be used to determine whether 2 posts are of the same play.
+    This is designed to not consider posts with incomplete information to be the same as posts with complete info
+    """
+    return {'player_link': score.player_link, 'map': score.beatmap_link, 'mods': score.mods_string}
+
+
+def add_score_info_to_skiplist(score: ScorePostInfo, skip_list=SCORE_SKIP_LIST_FILE):
+    with open(skip_list, "r+") as f:
+        skip_list = json.load(f)
+        skip_list.append(make_score_info(score))
+        f.seek(0)
+        f.truncate()
+        json.dump(skip_list, f)
+
 
 def get_score_posts(reddit: praw.Reddit, subreddit: str, sort_type: str, num_posts: int, author: str, use_skiplist=False):
     """

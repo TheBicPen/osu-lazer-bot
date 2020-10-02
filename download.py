@@ -6,7 +6,9 @@ import io
 from typing import List
 
 DOWNLOAD_SCRIPT = "node osu-replay-downloader/fetch.js"
-
+DOWNLOAD_OPTION = "beatmaps replays"
+SORT_TYPE = "hot"
+NUM_CHECKED = 8
 
 class BeatmapDownloader:
     """
@@ -124,8 +126,8 @@ Check out this project on GitHub: https://github.com/TheBicPen/osu-lazer-bot
         tags = ["osu", "osu!", "pp", "lazer", self.play.player_name,
                 self.play.beatmap_name, self.play.mapper_name, self.play.top_on_map]
         self.video_tags = ','.join([str(tag) for tag in tags if tag])[:500]
-        # gaming category as of 2020. I'm not spending API quota on this
-        self.video_category = "22"
+        # gaming category (for my channel??) as of 2020. I'm not spending API quota on this
+        self.video_category = "20"
 
     def download_beatmapset(self, filename: str, provider=None):
         if provider is None:
@@ -215,7 +217,7 @@ def download_beatmapsets(recordings: List[ReplayRecording], beatmap_provider=Non
                     f"Beatmap name: {replay_info.play.beatmap_name}, post title: '{replay_info.play.post_title}'")
 
 
-def download_plays(download_option: str, max_plays_checked: int, reddit_sort_type: str, download_script: str = DOWNLOAD_SCRIPT, beatmap_provider=None) -> List[ReplayRecording]:
+def download_plays(download_option: str = DOWNLOAD_OPTION, max_plays_checked: int = NUM_CHECKED, reddit_sort_type: str = SORT_TYPE, download_script: str = DOWNLOAD_SCRIPT, beatmap_provider=None) -> List[ReplayRecording]:
     """
     Check max_plays_checked r/osugame posts sorted by reddit_sort_type for plays.
     Download beatmaps and/or replays based on the string in download_option using the script download_replays.

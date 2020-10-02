@@ -10,9 +10,9 @@ from typing import List
 import sys
 
 #default options
-NUM_POSTS_CHECKED = 8
-SORT_TYPE = "hot"
-DOWNLOAD_OPTION = "beatmaps replays"
+#NUM_POSTS_CHECKED = 8
+#SORT_TYPE = "hot"
+#DOWNLOAD_OPTION = "beatmaps replays"
 BEATMAP_LOAD_TIMEOUT = 10
 MAX_REPLAY_LENGTH = 900
 COMPRESSION_CRF = 5
@@ -38,8 +38,7 @@ def main(mode: str = MODE, *args):
         return
 
     elif mode == "auto":
-        replay_infos = download.download_plays(
-            DOWNLOAD_OPTION, *args)
+        replay_infos = download.download_plays(*args) # todo fix calling this with str for int parameter
         num_imported_maps = import_maps(replay_infos)
         print(f"Imported {num_imported_maps} maps")
 
