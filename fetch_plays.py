@@ -108,6 +108,21 @@ class ScorePostInfo:
         if match := re.search(self._beatmap_re, comment):
             self.beatmap_name, self.beatmap_link = match.group(1, 2)
 
+    def set_beatmap_url(self, url: str):
+        beatmap_url_re = re.compile(
+            r"https?://osu\.ppy\.sh/beatmapsets/(\d+)#(\w+)/(\d+)")
+        mode2int = {
+            "osu": 0,
+            "taiko": 1,
+            "fruits": 2,
+            "mania": 3
+        }
+        if match := re.match(beatmap_url_re, url):
+            self.beatmapset_download = "https://osu.ppy.sh/d/" + match.group(1)
+            self.beatmap_link = f"https://osu.ppy.sh/b/{match.group(3)}?m={mode2int.get(match.group(2), 0)}"
+            return True
+        return False
+
 
 def get_safe_name(string):
     if string is None:

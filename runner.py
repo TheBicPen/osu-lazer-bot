@@ -9,10 +9,7 @@ import os.path
 from typing import List
 import sys
 
-#default options
-#NUM_POSTS_CHECKED = 8
-#SORT_TYPE = "hot"
-#DOWNLOAD_OPTION = "beatmaps replays"
+# default options
 BEATMAP_LOAD_TIMEOUT = 10
 MAX_REPLAY_LENGTH = 900
 COMPRESSION_CRF = 5
@@ -38,18 +35,23 @@ def main(mode: str = MODE, *args):
         return
 
     elif mode == "auto":
-        replay_infos = download.download_plays(*args) # todo fix calling this with str for int parameter
+        if len(args) > 1:
+            replay_infos = download.download_plays(
+                args[0], int(args[1], *args[2:]))
+        else:
+            replay_infos = download.download_plays(*args)
         num_imported_maps = import_maps(replay_infos)
         print(f"Imported {num_imported_maps} maps")
 
         for replay_info in replay_infos:
-           make_video(replay_info)
-           sleep(3)
+            make_video(replay_info)
+            sleep(3)
     elif mode == "stream":
         stream(*args)
         return
     else:
         print("invalid mode", mode)
+
 
 def stream(scale=SCALE):
     reddit = fp.initialize()
@@ -57,14 +59,16 @@ def stream(scale=SCALE):
         try:
             print(post.title)
             if comment := fp.get_scorepost_comment(post, "osu-bot"):
-                replay_info = download.ReplayRecording(fp.ScorePostInfo(comment))
+                replay_info = download.ReplayRecording(
+                    fp.ScorePostInfo(comment))
                 download.download_beatmapsets([replay_info])
                 download.download_replays([replay_info])
                 import_maps([replay_info])
                 print("Recording video", replay_info)
                 make_video(replay_info, scale)
         except Exception:
-            pass # ¯\_(ツ)_/¯
+            pass  # ¯\_(ツ)_/¯
+
 
 def single(post_id: str = None, post_to_reddit=False, scale=SCALE):
     reddit = fp.initialize()
@@ -104,11 +108,12 @@ def make_video(replay_info: download.ReplayRecording, scale: str = SCALE):
             return upload(replay_info)
         else:
             print(f"Skipping recording '{replay_info.play.player_name} - {replay_info.play.beatmap_name}'" +
-                    f"because either replay file '{replay_info.replay_file}' or play length '{replay_info.play.length}' are missing")
+                  f"because either replay file '{replay_info.replay_file}' or play length '{replay_info.play.length}' are missing")
             return None
     except AttributeError:
         print("replay_info has no valid play object attached")
         return None
+
 
 def manual():
     reddit = fp.initialize()
@@ -125,6 +130,27 @@ def manual():
                     download.download_replays([recording])
                 if input("Download beatmaps? [y/n]: ") == "y":
                     download.download_beatmapsets([recording])
+            elif action == "autoset":
+                action = input(
+                    "Choose properties to autoset:\n\t[bc] - beatmap by comment\n\t[bu] - beatmap by url\n\t[mods]\n")
+                if action == "bc":
+                    try:
+                        recording.play.set_beatmap(input("Comment text: "))
+                    except AttributeError:
+                        print("Recording has no play to set attributes of")
+                elif action == "bu":
+                    try:
+                        success = recording.play.set_beatmap_url(input("Beatmap URL: "))
+                        if not success:
+                            print("URL did not match")
+                    except AttributeError:
+                        print("Recording has no play to set attributes of")
+                elif action == "mods":
+                    try:
+                        recording.play.set_mods(input("Mods: "))
+                    except AttributeError:
+                        print("Recording has no play to set attributes of")
+                        
             elif action == "set":
                 prop = input("Property name to set: ")
                 obj_to_set = recording
@@ -147,13 +173,15 @@ def manual():
                 factor = int(input("Select compression ratio [0-25]"))
                 upscale(recording, compression=factor)
                 print("Upscaled file")
+                recording.generate_video_attributes()
+                print("Generated video attributes")
                 vid_id = upload(recording)
                 print("Uploaded video", vid_id)
-        except KeyboardInterrupt as e:
+        except KeyboardInterrupt:
             print("Back to main menu")
         print("Score:", recording)
         action = input(
-            "Menu:\n\t[set] property of recording\n\t[download] replays and beatmaps\n\t[add] post\n\t[go] record and upload scores\n\t[exit]\n")
+            "Menu:\n\t[set] property of recording\n\t[autoset] properties\n\t[download] replays and beatmaps\n\t[add] post\n\t[go] record and upload scores\n\t[exit]\n")
 
 
 def record_ffmpeg(play_length: int, output_file: str, replay_file: str):
@@ -227,10 +255,15 @@ def record(replay_info: download.ReplayRecording, recording_folder: str = None, 
     output_file = os.path.join(recording_folder, fp.get_safe_name(
         f"{replay_info.play.beatmap_name}_{replay_info.play.player_name}_{int(time())}") + ".mkv")
     conf_file = "creds/settings_autoscale.conf" if autoscale else "creds/settings.conf"
-    record_ssr(int(replay_info.play.length)+20,
-               output_file, replay_info.replay_file, conf_file)
+    record_ssr(get_recording_length(replay_info), output_file,
+               replay_info.replay_file, conf_file)
     replay_info.video_file = output_file
     return output_file
+
+
+def get_recording_length(replay_info: download.ReplayRecording) -> int:
+    length = int(replay_info.play.length)
+    return length + 15 + max(length // 30, 15)
 
 
 def upscale(play: download.ReplayRecording, infile: str = None, outfile: str = None, compression: int = COMPRESSION_CRF):
