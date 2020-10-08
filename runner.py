@@ -37,7 +37,7 @@ def main(mode: str = MODE, *args):
     elif mode == "auto":
         if len(args) > 1:
             replay_infos = download.download_plays(
-                args[0], int(args[1], *args[2:]))
+                args[0], int(args[1]), *args[2:])
         else:
             replay_infos = download.download_plays(*args)
         num_imported_maps = import_maps(replay_infos)
@@ -263,7 +263,7 @@ def record(replay_info: download.ReplayRecording, recording_folder: str = None, 
 
 def get_recording_length(replay_info: download.ReplayRecording) -> int:
     length = int(replay_info.play.length)
-    return length + 15 + max(length // 30, 15)
+    return length + 10 + max(length // 30, 15)
 
 
 def upscale(play: download.ReplayRecording, infile: str = None, outfile: str = None, compression: int = COMPRESSION_CRF):
