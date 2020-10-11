@@ -234,7 +234,7 @@ YouTube links: [[1]](https://youtu.be/FBFYRwmNvCE "'Vaxei | Wakeshima Kanon - Ts
     def test_get_top_alltime_high_level(self):
         # assume that vaxei 1k is in top 5 of all time
         # use higher-level function this time
-        plays = fp.get_osugame_plays("all", 5)
+        plays = fp.get_osugame_plays("all", 5, "")
         title = "Vaxei | Wakeshima Kanon - Tsukinami [Nostalgia] + HDDT (mapset by Reform, 8.8*) 99.42% FC #1 | 1023pp | 63.64 cv. UR | 1st DT FC, 1st STD 1k pp play!!!"
         comment = """#### [Wakeshima Kanon - Tsukinami [Nostalgia]](https://osu.ppy.sh/b/1872396?m=0) [(&#x2b07;)](https://osu.ppy.sh/d/896080 "Download this beatmap") by [Reform](https://osu.ppy.sh/u/3723568 "8 ranked, 0 qualified, 0 loved, 62 unranked") || osu!standard
 **#2: [[ Hyung ]](https://osu.ppy.sh/u/7406009 "10,575pp - rank #364 (#30 KR) - 99.41% accuracy - 70,470 playcount") (+HDHR - 99.95% - 504pp) || 1,682x max combo || Ranked (2019) || 93,663 plays**

@@ -9,6 +9,7 @@ DOWNLOAD_SCRIPT = "node osu-replay-downloader/fetch.js"
 DOWNLOAD_OPTION = "beatmaps replays"
 SORT_TYPE = "hot"
 NUM_CHECKED = 8
+SCOREPOST_FILTER = "player scorepost post_id"
 
 class BeatmapDownloader:
     """
@@ -217,14 +218,15 @@ def download_beatmapsets(recordings: List[ReplayRecording], beatmap_provider=Non
                     f"Beatmap name: {replay_info.play.beatmap_name}, post title: '{replay_info.play.post_title}'")
 
 
-def download_plays(download_option: str = DOWNLOAD_OPTION, max_plays_checked: int = NUM_CHECKED, reddit_sort_type: str = SORT_TYPE, download_script: str = DOWNLOAD_SCRIPT, beatmap_provider=None) -> List[ReplayRecording]:
+def download_plays(download_option: str = DOWNLOAD_OPTION, max_plays_checked: int = NUM_CHECKED, reddit_sort_type: str = SORT_TYPE, filter_names: str = SCOREPOST_FILTER, download_script: str = DOWNLOAD_SCRIPT, beatmap_provider=None) -> List[ReplayRecording]:
     """
     Check max_plays_checked r/osugame posts sorted by reddit_sort_type for plays.
+    Filter posts by filters in filter_names.
     Download beatmaps and/or replays based on the string in download_option using the script download_replays.
     Beatmaps are downloaded using beatmap_provider
     """
 
-    plays = fp.get_osugame_plays(reddit_sort_type, max_plays_checked)
+    plays = fp.get_osugame_plays(reddit_sort_type, max_plays_checked, filter_names)
     replay_infos = [ReplayRecording(play) for play in plays]
     print()
     if "beatmaps" in download_option:

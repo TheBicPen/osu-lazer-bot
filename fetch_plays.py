@@ -21,12 +21,13 @@ mods2int = {
     "SO": 1 << 12,
     "AP": 1 << 13,
     "PF": 1 << 5 | 1 << 14,  # SD is always set along with PF.
-    "V2": 1 << 29,
-    # TODO: Unranked Mania mods, maybe.
+    "V2": 1 << 29
 }
 
 PLAYER_SKIP_LIST_FILE = "creds/skip_players.txt"
 SCORE_SKIP_LIST_FILE = "creds/skip_plays.txt"
+POST_ID_SKIP_LIST_FILE = "creds/skip_posts.txt"
+SCOREPOST_FILTER = "player scorepost post_id"
 
 
 class ScorePostInfo:
@@ -135,7 +136,30 @@ def get_digits(link):
     return link[last_slash + 1:] if last_slash != -1 else None
 
 
-def get_osugame_plays(sort_type: str, num_posts: int, reddit: praw.reddit = None):
+def filter_plays(plays: List[ScorePostInfo], filter_names: str):
+    out = plays.copy()
+    if "player" in filter_names:
+        out = filter_playernames(plays)
+    if "scorepost" in filter_names:
+        out = filter_scoreposts(plays)
+    return out
+
+
+def add_to_filters(plays: List[ScorePostInfo], filter_names: str):
+    if "player" in filter_names:
+        with open(PLAYER_SKIP_LIST_FILE, "a+") as f:
+            f.writelines([play.player_link.strip()+"\n" for play in plays if play.player_link])
+    if "post_id" in filter_names:
+        with open(POST_ID_SKIP_LIST_FILE, "a+") as f:
+            f.writelines(
+                [play.post_id.strip()+"\n" for play in plays if play.post_id])
+    if "scorepost" in filter_names:
+        for play in plays:
+            append_json(make_score_info(play), SCORE_SKIP_LIST_FILE)
+    return out
+
+
+def get_osugame_plays(sort_type: str, num_posts: int, filter_names: str = SCOREPOST_FILTER, reddit: praw.reddit = None):
     """
     This function handles the whole process.
     Here I realized just how obtuse the rest of the code in this file is
@@ -144,7 +168,7 @@ def get_osugame_plays(sort_type: str, num_posts: int, reddit: praw.reddit = None
         reddit = initialize()
     score_posts = get_score_posts(
         reddit, "osugame", sort_type, num_posts, "osu-bot")
-    return score_posts
+    return filter_plays(score_posts, filter_names)
 
 
 def post_vid_to_reddit(vid_id: str, post_id: str, reddit: praw.Reddit = None):
@@ -185,6 +209,16 @@ def filter_scoreposts(scores: List[ScorePostInfo], skip_list=SCORE_SKIP_LIST_FIL
     return [score for score in scores if make_score_info(score) not in skip_list]
 
 
+def filter_post_id(posts: List[praw.models.Submission], skip_list=POST_ID_SKIP_LIST_FILE):
+    """
+    Filter posts whose ids match those in the file skip_list.
+    Does not mutate the original list
+    """
+    with open(skip_list, "r+") as f:
+        skip_list = json.load(f)
+    return [post for post in posts if post.id not in skip_list]
+
+
 def make_score_info(score: ScorePostInfo):
     """
     Return a dict of some key properties of a play that can be used to determine whether 2 posts are of the same play.
@@ -193,13 +227,17 @@ def make_score_info(score: ScorePostInfo):
     return {'player_link': score.player_link, 'map': score.beatmap_link, 'mods': score.mods_string}
 
 
-def add_score_info_to_skiplist(score: ScorePostInfo, skip_list=SCORE_SKIP_LIST_FILE):
-    with open(skip_list, "r+") as f:
-        skip_list = json.load(f)
-        skip_list.append(make_score_info(score))
+def append_json(obj, file):
+    """
+    Append obj to list stored in json file. Return list.
+    """
+    with open(file, "r+") as f:
+        l = json.load(f)
+        l.append(obj)
         f.seek(0)
         f.truncate()
-        json.dump(skip_list, f)
+        json.dump(l, f)
+        return l
 
 
 def get_score_posts(reddit: praw.Reddit, subreddit: str, sort_type: str, num_posts: int, author: str, use_skiplist=False):
