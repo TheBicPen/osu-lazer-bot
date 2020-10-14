@@ -156,7 +156,6 @@ def add_to_filters(plays: List[ScorePostInfo], filter_names: str):
     if "scorepost" in filter_names:
         for play in plays:
             append_json(make_score_info(play), SCORE_SKIP_LIST_FILE)
-    return out
 
 
 def get_osugame_plays(sort_type: str, num_posts: int, filter_names: str = SCOREPOST_FILTER, reddit: praw.reddit = None):
@@ -194,7 +193,7 @@ def filter_playernames(scores: List[ScorePostInfo], skip_list=PLAYER_SKIP_LIST_F
     Filter scoreposts whose player link is in the file skip_list.
     Does not mutate the original list.
     """
-    with open(skip_list, "r+") as f:
+    with open(skip_list, "a+") as f:
         skip_list = [line.strip() for line in f.readlines()]
     return [score for score in scores if score.player_link not in skip_list]
 
@@ -204,7 +203,7 @@ def filter_scoreposts(scores: List[ScorePostInfo], skip_list=SCORE_SKIP_LIST_FIL
     Filter scoreposts that contain duplicates, where equality is determined by the dict returned by make_score_info.
     Does not mutate the original list
     """
-    with open(skip_list, "r+") as f:
+    with open(skip_list, "a+") as f:
         skip_list = json.load(f)
     return [score for score in scores if make_score_info(score) not in skip_list]
 
@@ -214,7 +213,7 @@ def filter_post_id(posts: List[praw.models.Submission], skip_list=POST_ID_SKIP_L
     Filter posts whose ids match those in the file skip_list.
     Does not mutate the original list
     """
-    with open(skip_list, "r+") as f:
+    with open(skip_list, "a+") as f:
         skip_list = json.load(f)
     return [post for post in posts if post.id not in skip_list]
 

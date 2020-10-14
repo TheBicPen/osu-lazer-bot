@@ -428,7 +428,7 @@ class TestScorePostFilter(unittest.TestCase):
         expected.append({
             'player_link': "https://osu.ppy.sh/u/6447454",
                 'map': "https://osu.ppy.sh/b/1695382?m=0", 'mods': "HDNC"})
-        fp.add_score_info_to_skiplist(post, "temp.json")
+        fp.append_json(fp.make_score_info(post), "temp.json")
         with open("temp.json", "r") as f:
             actual_skiplist = json.load(f)
         self.assertEqual(actual_skiplist, expected)

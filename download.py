@@ -149,6 +149,7 @@ def download_replays(recordings: List[ReplayRecording]):
         print("Unable to read osu! API token:", e)
         return
     for recording in recordings:
+        play=None
         try:
             helper_script = DOWNLOAD_SCRIPT.split()
             play = recording.play

@@ -22,7 +22,7 @@ def main(mode: str = MODE, *args):
     Mode is one of "manual", "single", "auto".
         "manual" takes no args and prompts the user for everything.
         "single" records and uploads a single replay from a reddit post.
-            This mode takes the reddit post id and whether to post the replay video as args. 
+            This mode takes the reddit post id and whether to post the replay video as args.
         "auto" retrieves scoreposts from reddit and records them.
             This mode takes the number of posts to check and the subreddit sort type as args.
     """
@@ -37,9 +37,9 @@ def main(mode: str = MODE, *args):
     elif mode == "auto":
         if len(args) > 1:
             replay_infos = download.download_plays(
-                args[0], int(args[1]), *args[2:])
+                args[0], int(args[1]), *args[2:], filter_names='')
         else:
-            replay_infos = download.download_plays(*args)
+            replay_infos = download.download_plays(*args, filter_names='')
         num_imported_maps = import_maps(replay_infos)
         print(f"Imported {num_imported_maps} maps")
 
@@ -169,7 +169,7 @@ def manual():
             elif action == "go":
                 num_imported_maps = import_maps([recording])
                 print(f"Imported {num_imported_maps} maps")
-                record(recording)
+                record(recording, autoscale=False)
                 factor = int(input("Select compression ratio [0-25]"))
                 upscale(recording, compression=factor)
                 print("Upscaled file")
