@@ -1,11 +1,11 @@
 # osu-lazer-bot
 A collection of scripts designed to automate the process of checking Reddit for popular osu! plays, recording them, and uploading them to YouTube.
 
-# How to run this
+## How to run this
 Figure it out. Search for references to 'creds/' in the code and fill in those files with the required info
 
 
-## Project Status
+### Project Status
 This project is no longer under active development. Videos created by this project while it was active can be seen [here](https://www.youtube.com/channel/UCWUoXuSht6uy-evWTxpKFcQ). If anyone wants to take over the project, please go ahead.
 
 There are a few reasons for the ceased development: 
